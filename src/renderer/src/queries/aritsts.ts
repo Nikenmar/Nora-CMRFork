@@ -37,7 +37,7 @@ export const artistQuery = createQueryKeys('artists', {
   fetchOnlineInfo: (data: { artistId: number }) => {
     return {
       queryKey: [data.artistId],
-      queryFn: () => window.api.artistsData.getArtistArtworks(data.artistId)
+      queryFn: async () => (await window.api.artistsData.getArtistArtworks(data.artistId)) ?? null
     };
   }
 });

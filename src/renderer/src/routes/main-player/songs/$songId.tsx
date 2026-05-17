@@ -163,7 +163,7 @@ function SongInfoPage() {
     let thisYearNoofListens = 0;
     let thisMonthNoOfListens = 0;
     if (listeningData) {
-      const { playEvents } = listeningData;
+      const playEvents = listeningData.playEvents ?? [];
 
       allTime = playEvents.length;
 
@@ -189,11 +189,16 @@ function SongInfoPage() {
   const { totalSongFullListens, totalSongSkips, maxSongSeekPosition, maxSongSeekFrequency } =
     useMemo(() => {
       if (listeningData) {
-        const { playEvents, skipEvents, seekEvents } = listeningData;
+        const playEvents = listeningData.playEvents ?? [];
+        const skipEvents = listeningData.skipEvents ?? [];
+        const seekEvents = listeningData.seekEvents ?? [];
 
-        const groupedSeeks = Object.groupBy(seekEvents, (seek) =>
-          parseFloat(seek.position).toFixed(2)
-        );
+        const groupedSeeks = seekEvents.reduce((acc, seek) => {
+          const pos = parseFloat(seek.position).toFixed(2);
+          if (!acc[pos]) acc[pos] = [];
+          acc[pos].push(seek);
+          return acc;
+        }, {} as Record<string, typeof seekEvents>);
 
         // find the seek group with the most seeks
         let groupWithMostSeeks: { position: string; seeks: typeof seekEvents } | null = null;

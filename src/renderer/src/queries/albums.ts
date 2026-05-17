@@ -22,6 +22,6 @@ export const albumQuery = createQueryKeys('albums', {
   }),
   fetchOnlineInfo: (data: { albumId: number }) => ({
     queryKey: [data.albumId],
-    queryFn: () => window.api.albumsData.getAlbumInfoFromLastFM(data.albumId)
+    queryFn: async () => (await window.api.albumsData.getAlbumInfoFromLastFM(data.albumId)) ?? null
   })
 });

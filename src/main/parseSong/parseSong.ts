@@ -120,6 +120,20 @@ export const parseSong = async (
 
     const stats = await fs.stat(absoluteFilePath);
     const file = File.createFromPath(absoluteFilePath);
+    
+    // Auto-heal empty MIME types in pictures (fixes Chromium DEMUXER_ERROR_COULD_NOT_OPEN)
+    if (file.tag && file.tag.pictures && file.tag.pictures.length > 0) {
+      let needsSave = false;
+      for (const pic of file.tag.pictures) {
+        if (!pic.mimeType || pic.mimeType.trim() === '') {
+          pic.mimeType = 'image/jpeg';
+          needsSave = true;
+          logger.info(`Auto-healed empty MIME type for picture.`, { absoluteFilePath });
+        }
+      }
+      if (needsSave) file.save();
+    }
+
     const metadata = file.tag;
 
     // songFileStream.close();

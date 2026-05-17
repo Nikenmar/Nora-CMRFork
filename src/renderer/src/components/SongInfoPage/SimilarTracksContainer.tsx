@@ -34,16 +34,18 @@ const SimilarTracksContainer = (props: Props) => {
 
   const handleSongPlayBtnClick = useCallback(
     (startSongId?: number) => {
+      if (!similarTracks?.sortedAvailTracks) return;
       const songs = similarTracks.sortedAvailTracks.map((song) => song.songData!);
       const queueSongIds = songs.filter((song) => !song.isBlacklisted).map((song) => song.songId);
 
       createQueue(queueSongIds, 'songs', false, undefined, !startSongId);
       if (startSongId) playSong(startSongId, true);
     },
-    [similarTracks.sortedAvailTracks, createQueue, playSong]
+    [similarTracks?.sortedAvailTracks, createQueue, playSong]
   );
 
   const addSongsToPlayNext = useCallback(() => {
+    if (!similarTracks?.sortedAvailTracks) return;
     const songs = similarTracks.sortedAvailTracks.map((song) => song.songData!);
     const queueSongIds = songs.filter((song) => !song.isBlacklisted).map((song) => song.songId);
 
@@ -80,7 +82,7 @@ const SimilarTracksContainer = (props: Props) => {
       }
     ]);
   }, [
-    similarTracks.sortedAvailTracks,
+    similarTracks?.sortedAvailTracks,
     queue.position,
     queue.songIds,
     currentSongData.songId,
@@ -90,8 +92,9 @@ const SimilarTracksContainer = (props: Props) => {
   ]);
 
   const availableSimilarTrackComponents = useMemo(
-    () =>
-      similarTracks.sortedAvailTracks.map((track, index) => {
+    () => {
+      if (!similarTracks?.sortedAvailTracks) return [];
+      return similarTracks.sortedAvailTracks.map((track, index) => {
         const { songData } = track;
         const song = songData!;
         return (
@@ -112,17 +115,20 @@ const SimilarTracksContainer = (props: Props) => {
             onPlayClick={handleSongPlayBtnClick}
           />
         );
-      }),
-    [handleSongPlayBtnClick, preferences?.isSongIndexingEnabled, similarTracks.sortedAvailTracks]
+      });
+    },
+    [handleSongPlayBtnClick, preferences?.isSongIndexingEnabled, similarTracks?.sortedAvailTracks]
   );
 
   const unAvailableSimilarTrackComponents = useMemo(
-    () =>
-      similarTracks.sortedUnAvailTracks.map((track) => {
+    () => {
+      if (!similarTracks?.sortedUnAvailTracks) return [];
+      return similarTracks.sortedUnAvailTracks.map((track) => {
         const { title, url, artists } = track;
         return <UnAvailableTrack title={title} artists={artists} url={url} key={url} />;
-      }),
-    [similarTracks.sortedUnAvailTracks]
+      });
+    },
+    [similarTracks?.sortedUnAvailTracks]
   );
 
   return (

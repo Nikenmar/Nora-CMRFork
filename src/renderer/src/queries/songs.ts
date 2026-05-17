@@ -38,19 +38,21 @@ export const songQuery = createQueryKeys('songs', {
         `sortType=${sortType}`,
         `filterType=${filterType}`
       ],
-      queryFn: () => window.api.audioLibraryControls.getSongInfo(songIds, sortType, filterType)
+      queryFn: async () =>
+        (await window.api.audioLibraryControls.getSongInfo(songIds, sortType, filterType)) ?? null
     };
   },
   singleSongInfo: (data: { songId: number }) => {
     return {
       queryKey: [data.songId],
-      queryFn: () => window.api.audioLibraryControls.getSongInfo([data.songId])
+      queryFn: async () => (await window.api.audioLibraryControls.getSongInfo([data.songId])) ?? null
     };
   },
   similarTracks: (data: { songId: number }) => {
     return {
       queryKey: [data.songId],
-      queryFn: () => window.api.audioLibraryControls.getSimilarTracksForASong(data.songId)
+      queryFn: async () =>
+        (await window.api.audioLibraryControls.getSimilarTracksForASong(data.songId)) ?? null
     };
   },
   queue: (songIds: number[]) => {
