@@ -36,17 +36,10 @@ if (file.tag && file.tag.pictures && file.tag.pictures.length > 0) {
 
 ---
 
-### 📝 Development Note (Backport & Hybrid Architecture)
+###  Note
 
-> [!NOTE]  
-> This fork is actually a unique hybrid. The FLAC auto-healing pipeline was originally designed and fully implemented for the next-generation **`v4.0.0-alpha.4`** branch of Nora (which natively uses `node-taglib-sharp`). However, since the `v4` alpha codebase is still in early development and proved too unstable for daily driving, the decision was made to **backport / cherry-pick** these critical fixes back to the rock-solid **`v3.1.0-stable`** codebase.
+> This fork is actually a unique hybrid. The FLAC auto-healing was originally designed and fully implemented for the next-generation **`v4.0.0-alpha.4`** branch of Nora (which natively uses `node-taglib-sharp`). However, since the `v4` alpha codebase is still in development and proved too unstable for daily using, the decision was made to **backport / cherry-pick** these critical fixes back to the solid **`v3.1.0-stable`** codebase.
 > 
-> Since Nora `v3.1.0` lacks any native FLAC tag editing capabilities out of the box (it only uses `music-metadata` for read-only tag parsing and `node-id3` for editing MP3 tags), we manually backported the tag-repair logic and successfully integrated the heavy-lifting **`node-taglib-sharp`** library down into `v3.1.0`. 
+> Since Nora `v3.1.0` lacks any native FLAC tag editing capabilities out of the box (it only uses `music-metadata` for read-only tag parsing and `node-id3` for editing MP3 tags), i manually backported the tag-repair logic and successfully integrated the heavy-lifting **`node-taglib-sharp`** library down into `v3.1.0`. 
 > 
 > As a result, this fork delivers a bulletproof daily driver experience: combining the ultimate stability of the `v3` stable release with the advanced metadata auto-healing capabilities of the future `v4` release.
-
----
-
-<center>
-    Nora CMR Fork by <a href="https://github.com/nikenmar">nikenmar</a>.
-</center>
