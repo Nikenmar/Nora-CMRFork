@@ -24,13 +24,13 @@ const ErrorBoundaryFallbackUi = (props: ErrorBoundaryStates) => {
       <img src={BugImg} alt="App bug found." className="w-48" />
       <br />
       <h2>{t('common.somethingWentWrong')}</h2>
-      {isInDevelopment && (
+      {true && (
         <details
           style={{ whiteSpace: 'pre-wrap' }}
-          className="mx-auto max-w-[80%] text-sm font-light"
+          className="mx-auto max-w-[80%] text-sm font-light select-text"
         >
-          <summary className="cursor-pointer px-4 py-2 underline">{t('common.details')}</summary>
-          <p className="mt-4 rounded-2xl bg-background-color-2 p-4 dark:bg-dark-background-color-2">
+          <summary className="cursor-pointer px-4 py-2 underline select-none">{t('common.details')}</summary>
+          <p className="mt-4 rounded-2xl bg-background-color-2 p-4 dark:bg-dark-background-color-2 select-text">
             {error && error.toString()}
             <br />
             {errorInfo?.componentStack}

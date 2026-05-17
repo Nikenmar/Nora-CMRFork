@@ -1,6 +1,7 @@
 import fs from 'fs/promises';
 import path from 'path';
 import * as musicMetaData from 'music-metadata';
+import * as taglib from 'node-taglib-sharp';
 
 import { generateRandomId } from '../utils/randomId';
 import logger from '../logger';
@@ -109,6 +110,25 @@ export const parseSong = async (
 
     // if (!songFileStream.readable)
     //  logger.debug('song stream not readable', undefined, 'ERROR');
+
+    // Safe Auto-Healing using node-taglib-sharp (fixes Chromium DEMUXER_ERROR_COULD_NOT_OPEN)
+    try {
+      const file = taglib.File.createFromPath(absoluteFilePath);
+      if (file.tag && file.tag.pictures && file.tag.pictures.length > 0) {
+        let needsSave = false;
+        for (const pic of file.tag.pictures) {
+          if (!pic.mimeType || pic.mimeType.trim() === '') {
+            pic.mimeType = 'image/jpeg';
+            needsSave = true;
+            logger.info(`Auto-healed empty MIME type for picture in parseSong.`, { absoluteFilePath });
+          }
+        }
+        if (needsSave) file.save();
+      }
+      file.dispose();
+    } catch (taglibErr) {
+      logger.error('Failed to run taglib auto-heal in parseSong', { taglibErr, absoluteFilePath });
+    }
 
     const stats = await fs.stat(absoluteFilePath);
     const metadata: musicMetaData.IAudioMetadata = await musicMetaData.parseFile(absoluteFilePath);

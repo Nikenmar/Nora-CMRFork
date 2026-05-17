@@ -1,6 +1,6 @@
 {
   "name": "nora",
-  "version": "3.1.0-stable",
+  "version": "3.1.0-CMR-Fork",
   "type": "module",
   "description": "Nora",
   "keywords": [
@@ -111,6 +111,7 @@
     "mime": "^4.0.6",
     "music-metadata": "^11.0.0",
     "node-id3": "^0.2.6",
+    "node-taglib-sharp": "^6.0.3",
     "node-vibrant": "^4.0.0",
     "pinyin-pro": "^3.26.0",
     "react-i18next": "^15.0.2",

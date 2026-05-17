@@ -1,6 +1,7 @@
 import fs from 'fs/promises';
 import path from 'path';
 import * as musicMetaData from 'music-metadata';
+import * as taglib from 'node-taglib-sharp';
 
 import { removeArtwork, storeArtworks } from '../other/artworks';
 import { getSongArtworkPath, removeDefaultAppProtocolFromFilePath } from '../fs/resolveFilePaths';
@@ -41,6 +42,24 @@ const reParseSong = async (filePath: string) => {
 
   const songPath = removeDefaultAppProtocolFromFilePath(filePath);
   try {
+    // Safe Auto-Healing using node-taglib-sharp (fixes Chromium DEMUXER_ERROR_COULD_NOT_OPEN)
+    try {
+      const file = taglib.File.createFromPath(songPath);
+      if (file.tag && file.tag.pictures && file.tag.pictures.length > 0) {
+        let needsSave = false;
+        for (const pic of file.tag.pictures) {
+          if (!pic.mimeType || pic.mimeType.trim() === '') {
+            pic.mimeType = 'image/jpeg';
+            needsSave = true;
+            logger.info(`Auto-healed empty MIME type for picture in reParseSong.`, { songPath });
+          }
+        }
+        if (needsSave) file.save();
+      }
+      file.dispose();
+    } catch (taglibErr) {
+      logger.error('Failed to run taglib auto-heal in reParseSong', { taglibErr, songPath });
+    }
     for (const song of songs) {
       if (song.path === songPath) {
         const { songId, isArtworkAvailable } = song;
