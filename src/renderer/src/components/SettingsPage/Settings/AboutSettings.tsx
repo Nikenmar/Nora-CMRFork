@@ -66,7 +66,7 @@ const AboutSettings = () => {
           <div className="flex items-center">
             <Img src={AppIcon} className="aspect-square max-h-12 rounded-md shadow-md" alt="" />
             <div className="ml-4 flex flex-col">
-              <span className="block">Nora</span>
+              <span className="block font-medium">Nora (CMR Fork by nikenmar)</span>
               <span className="text-sm font-light">
                 v{version}{' '}
                 {elapsed && (
@@ -416,6 +416,22 @@ const AboutSettings = () => {
                 )
               }}
             />
+
+            <div className="mt-4 border-t border-background-color-2 pt-4 dark:border-dark-background-color-2">
+              <div className="font-medium text-font-color-highlight dark:text-dark-font-color-highlight mb-1">
+                About CMR Fork
+              </div>
+              <p className="text-xs text-font-color-black opacity-80 dark:text-font-color-white font-light">
+                This is a custom fork developed and maintained by{' '}
+                <Hyperlink
+                  link="https://github.com/nikenmar"
+                  linkTitle="nikenmar's GitHub Profile"
+                  label="nikenmar"
+                  className="font-normal underline"
+                />{' '}
+                to resolve stability issues and Chromium demuxer crashes during FLAC file playback.
+              </p>
+            </div>
 
             <br />
             <Hyperlink

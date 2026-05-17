@@ -2,7 +2,13 @@
   "name": "nora",
   "version": "3.1.0-CMR-Fork",
   "type": "module",
-  "description": "Nora",
+  "description": "Nora (CMR Fork by nikenmar)",
+  "contributors": [
+    {
+      "name": "nikenmar",
+      "url": "https://github.com/nikenmar"
+    }
+  ],
   "keywords": [
     "music",
     "electron",

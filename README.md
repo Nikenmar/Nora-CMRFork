@@ -4,18 +4,39 @@
  </h1>
 
  <div align="center">
+   <h3>🚀 Nora — CMR Fork by nikenmar</h3>
+   <p><b>This is a custom, stable fork of Nora (based on 3.1.0-stable) maintained by <a href="https://github.com/nikenmar">nikenmar</a> to resolve critical playback issues.</b></p>
+ </div>
+
+ <div align="center">
   <img alt="GitHub all releases" src="https://img.shields.io/github/downloads/Sandakan/Nora/total?label=all%20time%20downloads&style=for-the-badge">
   <img alt="GitHub release (latest by date)" src="https://img.shields.io/github/downloads/Sandakan/Nora/v3.1.0-stable/total?style=for-the-badge">
   <img alt="GitHub package.json version" src="https://img.shields.io/github/package-json/v/Sandakan/Nora?color=blue&label=latest%20version&style=for-the-badge">
   <a href="https://github.com/Sandakan/Nora/blob/master/LICENSE"><img alt="GitHub license" src="https://img.shields.io/github/license/Sandakan/Nora?style=for-the-badge"></a>
   <a href="https://github.com/Sandakan/Nora/issues"><img alt="GitHub issues" src="https://img.shields.io/github/issues/Sandakan/Oto-Music-for-Desktop?style=for-the-badge"></a>
   <img alt="GitHub Workflow Status" src="https://img.shields.io/github/actions/workflow/status/Sandakan/Nora/build.yml?branch=master&style=for-the-badge">
-  <br/>
-  <br/>
-  <a title="Crowdin" target="_blank" href="https://crowdin.com/project/nora"><img src="https://badges.crowdin.net/nora/localized.svg"></a>
  </div>
 
  <br/>
+
+---
+
+### 🛡️ Why does this Fork exist? (The annoying FLAC issue)
+
+Many high-fidelity FLAC audio files downloaded from online sources or ripped from CDs fail to play in Nora and cause the entire playback engine to crash with a `DEMUXER_ERROR_COULD_NOT_OPEN` error in the logs. 
+
+#### The Root Cause
+Chromium (the rendering engine behind Electron) has a strict built-in demuxer. When a FLAC file contains an embedded album cover image with an **empty or missing MIME type attribute** in its picture block headers, Chromium's native demuxer encounters a demuxing exception and crashes completely. 
+
+#### The Solution (Auto-Healing)
+This fork introduces an active, safe **auto-healing pipeline** using `node-taglib-sharp`:
+1. Every time a song is scanned or reparsed, it checks the embedded tag pictures.
+2. If any picture has an empty or whitespace-only MIME type, it automatically heals it on disk by writing `'image/jpeg'` into the file metadata and calling `file.save()`.
+3. Chromium can now demux and play the files perfectly!
+
+Additionally, this fork **disables automatic update checks** to prevent official releases from overwriting your custom stable version.
+
+---
 
 <div align="center">
 Nora is an elegant music player built using Electron and React. 
@@ -176,8 +197,10 @@ If you have any feedback about bugs, feature requests, etc. about the app, pleas
 
  <center>
      Made with <span class="heart">&#10084;</span> by Sandakan Nipunajith.
-    <br>
-    Love, Sri Lanka.
+     <br>
+     Forked and maintained by <a href="https://github.com/nikenmar">nikenmar</a>.
+     <br>
+     Love, Sri Lanka & Russia.
  </center>
 
 <br>
