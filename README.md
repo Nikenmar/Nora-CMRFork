@@ -1,214 +1,52 @@
- <h1 align="center">
-   <img class="logo" src="resources/other/nora_logo_banner.webp">
-   <!-- <p>Nora Player</p> -->
- </h1>
+# Nora - CMR Fork
 
- <div align="center">
-   <h3>🚀 Nora — CMR Fork by nikenmar</h3>
-   <p><b>This is a custom, stable fork of Nora (based on 3.1.0-stable) maintained by <a href="https://github.com/nikenmar">nikenmar</a> to resolve critical playback issues.</b></p>
- </div>
+This is a custom fork of the Nora music player that fixes the most annoying FLAC playback issues and brings significant stability improvements.
 
- <div align="center">
-  <img alt="GitHub all releases" src="https://img.shields.io/github/downloads/Sandakan/Nora/total?label=all%20time%20downloads&style=for-the-badge">
-  <img alt="GitHub release (latest by date)" src="https://img.shields.io/github/downloads/Sandakan/Nora/v3.1.0-stable/total?style=for-the-badge">
-  <img alt="GitHub package.json version" src="https://img.shields.io/github/package-json/v/Sandakan/Nora?color=blue&label=latest%20version&style=for-the-badge">
-  <a href="https://github.com/Sandakan/Nora/blob/master/LICENSE"><img alt="GitHub license" src="https://img.shields.io/github/license/Sandakan/Nora?style=for-the-badge"></a>
-  <a href="https://github.com/Sandakan/Nora/issues"><img alt="GitHub issues" src="https://img.shields.io/github/issues/Sandakan/Oto-Music-for-Desktop?style=for-the-badge"></a>
-  <img alt="GitHub Workflow Status" src="https://img.shields.io/github/actions/workflow/status/Sandakan/Nora/build.yml?branch=master&style=for-the-badge">
- </div>
+## The Infamous FLAC / Demuxer Crash
 
- <br/>
+If you've encountered a sudden playback crash ("An error occurred") when playing high-quality FLAC or MP3 files, it is highly likely due to a Chromium demuxer crash:
 
----
-
-### 🛡️ Why does this Fork exist? (The annoying FLAC issue)
-
-Many high-fidelity FLAC audio files downloaded from online sources or ripped from CDs fail to play in Nora and cause the entire playback engine to crash with a `DEMUXER_ERROR_COULD_NOT_OPEN` error in the logs. 
+![Chromium Demuxer Error](error_screenshot.png)
 
 #### The Root Cause
-Chromium (the rendering engine behind Electron) has a strict built-in demuxer. When a FLAC file contains an embedded album cover image with an **empty or missing MIME type attribute** in its picture block headers, Chromium's native demuxer encounters a demuxing exception and crashes completely. 
+Nora uses `node-taglib-sharp` to read metadata (tags, album covers) from audio files. Sometimes, audio files contain embedded pictures with an empty or undefined MIME type field (either due to improper tag editing, encoding bugs, or different tag formats). 
 
-#### The Solution (Auto-Healing)
-This fork introduces an active, safe **auto-healing pipeline** using `node-taglib-sharp`:
-1. Every time a song is scanned or reparsed, it checks the embedded tag pictures.
-2. If any picture has an empty or whitespace-only MIME type, it automatically heals it on disk by writing `'image/jpeg'` into the file metadata and calling `file.save()`.
-3. Chromium can now demux and play the files perfectly!
+When Chromium attempts to load and demux the audio stream containing an image with a missing or null MIME descriptor, the native multimedia pipeline gets corrupted, throwing a fatal **`DEMUXER_ERROR_COULD_NOT_OPEN`** exception. This instantly kills the audio channel and crashes the player UI.
 
-Additionally, this fork **disables automatic update checks** to prevent official releases from overwriting your custom stable version.
+#### The Auto-Heal Fix
+In this fork, I implemented a proactive Auto-Healing system inside the main process song parser (`src/main/parseSong/parseSong.ts` & `reParseSong.ts`):
+
+```typescript
+// Auto-heal empty MIME types in pictures (fixes Chromium DEMUXER_ERROR_COULD_NOT_OPEN)
+if (file.tag && file.tag.pictures && file.tag.pictures.length > 0) {
+  let needsSave = false;
+  for (const pic of file.tag.pictures) {
+    if (!pic.mimeType || pic.mimeType.trim() === '') {
+      pic.mimeType = 'image/jpeg';
+      needsSave = true;
+      logger.info(`Auto-healed empty MIME type for picture.`, { absoluteFilePath });
+    }
+  }
+  if (needsSave) file.save();
+}
+```
+
+* **How it works:** When Nora parses a song, it inspects the embedded pictures array. If any image tag has an empty, missing, or whitespace-only `mimeType`, Nora automatically fixes it by writing `'image/jpeg'` as the default MIME type and immediately saves the tags back to the file using `file.save()`.
+* **The Result:** The file tags are permanently repaired, and Chromium can safely load the image and play the music without throwing any demuxer errors.
 
 ---
 
-<div align="center">
-Nora is an elegant music player built using Electron and React. 
-<br>
-Inspired from <a href="https://play.google.com/store/apps/details?id=com.piyush.music&gl=us">Oto Music (Android)</a> by Piyush Mamidwar.
-</div>
+### 📝 Development Note (Backport & Hybrid Architecture)
 
-<br/>
+> [!NOTE]  
+> This fork is actually a unique hybrid. The FLAC auto-healing pipeline was originally designed and fully implemented for the next-generation **`v4.0.0-alpha.4`** branch of Nora (which natively uses `node-taglib-sharp`). However, since the `v4` alpha codebase is still in early development and proved too unstable for daily driving, the decision was made to **backport / cherry-pick** these critical fixes back to the rock-solid **`v3.1.0-stable`** codebase.
+> 
+> Since Nora `v3.1.0` lacks any native FLAC tag editing capabilities out of the box (it only uses `music-metadata` for read-only tag parsing and `node-id3` for editing MP3 tags), we manually backported the tag-repair logic and successfully integrated the heavy-lifting **`node-taglib-sharp`** library down into `v3.1.0`. 
+> 
+> As a result, this fork delivers a bulletproof daily driver experience: combining the ultimate stability of the `v3` stable release with the advanced metadata auto-healing capabilities of the future `v4` release.
 
-<div align="center">
-  <a href="#app-features">Features</a> &bull;
-  <a href="#build-this-project-on-your-system">Build on your system</a> &bull;
-  <a href="#user-feedback">User feedback</a> &bull;
-  <a href="/changelog.md">Changelog</a> &bull;
-  <a href="https://github.com/Sandakan/Nora/releases">Download</a>
-</div>
+---
 
-<br/>
-
-![Nora Banner Artwork](/resources/other/artwork%200.webp)
-
-<br/>
-
-With simplicity and design in mind, this app was made to overcome problems when using default music apps on platforms that lack essential features.
-
-<br>
-
-## How do I download Nora?
-
-Go to **[Releases page](https://github.com/Sandakan/Nora/releases) > Assets > and choose the appropriate download** or [just click here to download the latest version of Nora](https://github.com/Sandakan/Nora/releases/latest).
-
-## App features
-
-It packs a horizon of features including,
-
-- [x] Organize your songs, artists, albums, and playlists with ease.
-- [x] Create playlists that meet your needs.
-- [x] Sing along with song lyrics[^1].
-- [x] Support for synced lyrics.
-- [x] Keep your favorite songs and artists close to you.
-- [x] Read your favorite artist's biography.
-- [ ] Personalized music shuffling[^2].(Upcoming)
-- [x] Change between Light and Dark themes with ease.
-- [x] A mini-player to help focus on what matters at the moment.
-- [x] Edit the metadata of your songs easily and conveniently [^3].
-- [x] Search through your library with the help of song filters.
-
-<br>
-
-![Latest Version Artwork](/resources/other/release%20artworks/whats-new-v3.1.0-stable.webp)
-
-Visit the [release notes](/changelog.md) to see what's new on the latest release.</p>
-
-<br>
-
-![Support for Online and Offline Lyrics Artwork](/resources/other/artwork%201.webp)
-
-![Switch between Dark and Light Modes Artwork](/resources/other/artwork%202.webp)
-
-![Support for Last.FM Scrobbling](/resources/other/artwork%209.webp)
-
-![Organize your music library with ease Artwork](/resources/other/artwork%203.webp)
-
-![See how your favorite artists appear on songs and albums Artwork](/resources/other/artwork%204.webp)
-
-![Keep your favorites closer to you Artwork](/resources/other/artwork%205.webp)
-
-![Search through your music library easily and efficiently Artwork](/resources/other/artwork%206.webp)
-
-![Edit song metadata and organize your library Artwork](/resources/other/artwork%207.webp)
-
-![Listen with the mini player Artwork](/resources/other/artwork%208.webp)
-
-<br/>
-
-## User Feedback
-
-<br>
-
-<div align="center"> 
-  <div>
-    <h3><i>" A sleek music player with a modern design, this solution seeks to provide users with a seamless experience when it comes to listening to their favorite local tunes. "</i></h3>
-    <a href="https://www.softpedia.com/get/Multimedia/Audio/Audio-Players/Oto-Music-for-Desktop.shtml"><i>Robert Condorache &bull; Softpedia </i></a>
-  </div> 
-</div>
-
-<br>
-
-<div align="center"> &bull; &bull; &bull; </div>
-
-<br>
-
-<div align="center"> 
-  <div>
-    <h3><i>" The application interface adopts rounded corners in a large area, the fonts and icons are round and cute, and the visual effect is very comfortable. "</i></h3>
-    <a href="https://sspai.com/post/78669"><i>Apps Worth Watching in the Near Future &bull; SSPAI</i></a>
-  </div> 
-</div>
-
-<br>
-
-<div align="center"> &bull; &bull; &bull; </div>
-
-<br>
-
-<div align="center"> 
-  <div>
-    <h3><i>" Just found the most beautiful music player for Windows: Nora "</i></h3>
-    <a href="https://www.reddit.com/r/windowsapps/comments/11xgg99/just_found_the_most_beautiful_music_player_for/"><i>r/windowapps &bull; Reddit</i></a>
-  </div> 
-</div>
-
-<br><br>
-
-## Build this project on your system
-
-<br/>
-
-Clone the project
-
-```bash
-  git clone https://github.com/Sandakan/Nora
-```
-
-Go to the project's folder
-
-```bash
-  cd Nora
-```
-
-Install dependencies
-
-```bash
-  npm install
-```
-
-Run
-
-```bash
-  npm start
-```
-
-<!-- <br>
-
-This project is built using [Electron React Boilerplate](https://github.com/electron-react-boilerplate/electron-react-boilerplate). -->
-
-<br>
-
-## Star History
-
-[![Star History Chart](https://api.star-history.com/svg?repos=Sandakan/Nora&type=Date)](https://star-history.com/#Sandakan/Nora&Date)
-
-## Feedback
-
-If you have any feedback about bugs, feature requests, etc. about the app, please let me know through the official [Nora Discord server](https://discord.gg/c5rGKnBs4y), or my [email](mailto:sandakannipunajith@gmail.com).
-
-<br>
-
- <center>
-     Made with <span class="heart">&#10084;</span> by Sandakan Nipunajith.
-     <br>
-     Forked and maintained by <a href="https://github.com/nikenmar">nikenmar</a>.
-     <br>
-     Love, Sri Lanka & Russia.
- </center>
-
-<br>
-
-- ##### Every song, artist, album, and song cover used in this demonstration is not owned by myself but owned by their respective owners. They were used for demonstration purposes only. I value all the copyrights of the owners of the above assets.
-
-[^1]: The song lyrics use the [SongLyrics](https://www.npmjs.com/package/songlyrics) package and an implementation from the [MxLRC](https://github.com/fashni/MxLRC) package under the hood.
-
-[^2]: Personalized shuffles and playlists are generated by analyzing the user's listening patterns and the number of times each song gets played.
-
-[^3]: Currently, the app only supports editing mp3 files due to some limitations of the dependencies.
+<center>
+    Nora CMR Fork by <a href="https://github.com/nikenmar">nikenmar</a>.
+</center>
