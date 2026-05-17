@@ -4,7 +4,7 @@ This is a custom fork of the Nora music player that fixes the most annoying FLAC
 
 ## The Infamous FLAC / Demuxer Crash
 
-If you've encountered a sudden playback crash ("Something went wrong") when playing high-quality FLAC or MP3 files, it is highly likely due to a Chromium demuxer crash:
+If you've encountered a sudden playback crash ("An error occurred") when playing high-quality FLAC or MP3 files, it is highly likely due to a Chromium demuxer crash:
 
 ![Chromium Demuxer Error](error_screenshot.png)
 
