@@ -29,16 +29,6 @@ const SongInfoPage = () => {
   const [songInfo, setSongInfo] = useState<SongData>();
   const [listeningData, setListeningData] = useState<SongListeningData>();
 
-  const { currentMonth, currentYear } = useMemo(() => {
-    const currentDate = new Date();
-    return {
-      currentDate,
-      currentYear: currentDate.getFullYear(),
-      currentMonth: currentDate.getMonth(),
-      currentDay: currentDate.getDate()
-    };
-  }, []);
-
   const songDuration = useMemo(() => {
     const { timeString } = calculateTimeFromSeconds(songInfo?.duration ?? 0);
 
@@ -139,40 +129,29 @@ const SongInfoPage = () => {
 
   const { allTimeListens, thisYearListens, thisMonthListens } = useMemo(() => {
     let allTime = 0;
-    let thisYearNoofListens = 0;
-    let thisMonthNoOfListens = 0;
+    // Rolling windows instead of calendar year/month, so nothing resets to zero
+    // on New Year / the 1st of a month. Lifetime data is always preserved.
+    let last365 = 0;
+    let last30 = 0;
     if (listeningData) {
-      const { listens } = listeningData;
-
-      allTime = listens
-        .map((x) => x.listens)
-        .map((x) => x.map((y) => y[1]))
-        .flat(5)
-        .reduce((prevValue, currValue) => prevValue + (currValue || 0), 0);
-
-      for (let i = 0; i < listens.length; i += 1) {
-        if (listens[i].year === currentYear) {
-          thisYearNoofListens = listens[i].listens
-            .map((x) => x[1])
-            .flat(5)
-            .reduce((prevValue, currValue) => prevValue + (currValue || 0), 0);
-
-          for (const listen of listens[i].listens) {
-            const [songDateNow, songListens] = listen;
-
-            const songMonth = new Date(songDateNow).getMonth();
-            if (songMonth === currentMonth) thisMonthNoOfListens += songListens;
-          }
-          console.log('thisMonth', thisMonthNoOfListens);
+      const now = Date.now();
+      const DAY = 86400000;
+      for (const yearly of listeningData.listens) {
+        for (const [timestamp, count] of yearly.listens) {
+          const c = count || 0;
+          allTime += c;
+          const age = now - timestamp;
+          if (age <= 365 * DAY) last365 += c;
+          if (age <= 30 * DAY) last30 += c;
         }
       }
     }
     return {
       allTimeListens: allTime,
-      thisYearListens: thisYearNoofListens,
-      thisMonthListens: thisMonthNoOfListens
+      thisYearListens: last365,
+      thisMonthListens: last30
     };
-  }, [currentMonth, currentYear, listeningData]);
+  }, [listeningData]);
 
   const { totalSongFullListens, totalSongSkips, maxSongSeekPosition, maxSongSeekFrequency } =
     useMemo(() => {

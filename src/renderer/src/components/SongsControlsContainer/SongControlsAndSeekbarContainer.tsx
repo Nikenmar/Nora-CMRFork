@@ -11,6 +11,7 @@ const SongControlsAndSeekbarContainer = () => {
   const isKnownSource = useStore(store, (state) => state.currentSongData.isKnownSource);
   const currentlyActivePage = useStore(store, (state) => state.currentlyActivePage);
   const isShuffling = useStore(store, (state) => state.player.isShuffling);
+  const isTierShuffling = useStore(store, (state) => state.player.isTierShuffling);
   const isRepeating = useStore(store, (state) => state.player.isRepeating);
   const isCurrentSongPlaying = useStore(store, (state) => state.player.isCurrentSongPlaying);
   const isPlayerStalled = useStore(store, (state) => state.player.isPlayerStalled);
@@ -20,6 +21,7 @@ const SongControlsAndSeekbarContainer = () => {
     updateQueueData,
     toggleIsFavorite,
     toggleRepeat,
+    toggleTierShuffle,
     toggleSongPlayback,
     handleSkipForwardClick,
     handleSkipBackwardClick
@@ -28,8 +30,11 @@ const SongControlsAndSeekbarContainer = () => {
 
   const handleQueueShuffle = useCallback(() => {
     if (isShuffling) updateQueueData(undefined, undefined, false, false, true);
-    else updateQueueData(undefined, undefined, true, undefined, false);
-  }, [isShuffling, updateQueueData]);
+    else {
+      toggleTierShuffle(false); // mutually exclusive with Mega Smart Shuffle
+      updateQueueData(undefined, undefined, true, undefined, false);
+    }
+  }, [isShuffling, toggleTierShuffle, updateQueueData]);
 
   return (
     <div className="song-controls-and-seekbar-container flex flex-col items-center justify-center py-2">
@@ -46,6 +51,19 @@ const SongControlsAndSeekbarContainer = () => {
               : 'material-icons-round-outlined'
           } icon cursor-pointer !text-2xl leading-none text-font-color-black opacity-60 transition-opacity hover:opacity-80 dark:text-font-color-white`}
           clickHandler={() => isKnownSource && toggleIsFavorite(!isAFavorite)}
+        />
+
+        <Button
+          className={`tier-shuffle-btn !m-0 flex items-center justify-center !rounded-none !border-0 bg-transparent !p-0 outline-1 outline-offset-1 after:absolute after:h-1 after:w-1 after:translate-y-4 after:rounded-full after:bg-font-color-highlight after:opacity-0 after:transition-opacity hover:bg-transparent focus-visible:!outline dark:bg-transparent dark:after:bg-dark-font-color-highlight dark:hover:bg-transparent ${
+            isTierShuffling && 'active after:opacity-100'
+          }`}
+          tooltipLabel={t('player.tierShuffle')}
+          iconName="auto_fix"
+          iconClassName={`material-icons-round icon !text-2xl opacity-60 transition-opacity hover:opacity-80 ${
+            isTierShuffling &&
+            '!text-font-color-highlight dark:!text-dark-font-color-highlight !opacity-100'
+          }`}
+          clickHandler={() => toggleTierShuffle()}
         />
 
         <Button

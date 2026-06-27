@@ -54,6 +54,7 @@ export type AppReducerStateActions =
   | { type: 'UPDATE_IS_REPEATING_STATE'; data: RepeatTypes }
   | { type: 'TOGGLE_IS_FAVORITE_STATE'; data?: boolean }
   | { type: 'TOGGLE_SHUFFLE_STATE'; data?: boolean }
+  | { type: 'TOGGLE_TIER_SHUFFLE_STATE'; data?: boolean }
   | { type: 'UPDATE_VOLUME_VALUE'; data: number }
   | { type: 'UPDATE_QUEUE'; data: Queue }
   | { type: 'UPDATE_QUEUE_CURRENT_SONG_INDEX'; data: number }
@@ -282,6 +283,16 @@ export const reducer = (state: AppReducer, action: AppReducerStateActions): AppR
         }
       };
     }
+    case 'TOGGLE_TIER_SHUFFLE_STATE': {
+      const isTierShuffling = action.data ?? !state.player.isTierShuffling;
+      return {
+        ...state,
+        player: {
+          ...state.player,
+          isTierShuffling
+        }
+      };
+    }
     case 'UPDATE_VOLUME': {
       const volume = action.data ?? state.player.volume;
       return {
@@ -443,7 +454,8 @@ export const LOCAL_STORAGE_DEFAULT_TEMPLATE: LocalStorage = {
     genresPage: 'aToZ',
     playlistsPage: 'aToZ',
     songsPage: 'aToZ',
-    musicFoldersPage: 'aToZ'
+    musicFoldersPage: 'aToZ',
+    tierlistsPage: 'dateAddedDescending'
   },
   equalizerPreset: {
     thirtyTwoHertzFilter: 0,
@@ -497,6 +509,7 @@ export const DEFAULT_REDUCER_DATA: AppReducer = {
     volume: localStorage.playback.volume,
     isRepeating: localStorage.playback.isRepeating,
     isShuffling: localStorage.playback.isShuffling,
+    isTierShuffling: false,
     songPosition: 0,
     isPlayerStalled: false,
     playbackRate: localStorage.playback.playbackRate

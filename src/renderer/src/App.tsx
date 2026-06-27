@@ -59,6 +59,7 @@ import parseNotificationFromMain from './other/parseNotificationFromMain';
 import ListeningDataSession from './other/listeningDataSession';
 import updateQueueOnSongPlay from './other/updateQueueOnSongPlay';
 import shuffleQueueRandomly from './other/shuffleQueueRandomly';
+import megaShuffleQueue from './other/megaShuffleQueue';
 import AudioPlayer from './other/player';
 import { dispatch, store } from './store';
 import { type AppReducer } from './other/appReducer';
@@ -1217,6 +1218,83 @@ export default function App() {
     [changeQueueCurrentSongIndex, shuffleQueue, toggleShuffling]
   );
 
+  // Mega Smart Shuffle (Tierlist Value Shuffle): like the normal shuffle, but it
+  // weighted-reorders the CURRENT queue (keeping the playing track up front) so
+  // you stay in the same context (all songs / a playlist) — it just leans the
+  // upcoming tracks toward what you rate highly. Mutually exclusive with shuffle.
+  const toggleTierShuffle = useCallback(
+    (force?: boolean) => {
+      const next = force ?? !store.state.player.isTierShuffling;
+
+      if (!next) {
+        const wasOn = store.state.player.isTierShuffling;
+        dispatch({ type: 'TOGGLE_TIER_SHUFFLE_STATE', data: false });
+        // Restore the original order, exactly like turning the normal shuffle off.
+        const q = store.state.localStorage.queue;
+        if (wasOn && Array.isArray(q.queueBeforeShuffle) && q.queueBeforeShuffle.length > 0) {
+          const playing = q.queue[q.currentSongIndex ?? 0];
+          const restored = q.queueBeforeShuffle.map((pos) => q.queue[pos]);
+          storage.queue.setQueue({
+            ...q,
+            queue: restored,
+            queueBeforeShuffle: [],
+            currentSongIndex: playing ? restored.indexOf(playing) : (q.currentSongIndex ?? 0)
+          });
+        }
+        return;
+      }
+
+      const currentQueue = store.state.localStorage.queue;
+      const baseQueue = [...currentQueue.queue];
+      if (baseQueue.length === 0) {
+        addNewNotifications([
+          { id: 'tierShuffleEmpty', duration: 5000, content: t('player.tierShuffleEmpty') }
+        ]);
+        return;
+      }
+
+      window.api.tierlistsData
+        .getTierlistData()
+        .then((tierlists) => {
+          const hasInfluencing = (tierlists || []).some((tl) => tl.influencesShuffle);
+          if (!hasInfluencing) {
+            // No tierlist feeds the shuffle — don't enable, just tell the user.
+            addNewNotifications([
+              {
+                id: 'tierShuffleNoInfluence',
+                duration: 6000,
+                content: t('player.tierShuffleNoInfluence')
+              }
+            ]);
+            return null;
+          }
+          return window.api.tierlistsData.getMegaShuffleWeights(baseQueue);
+        })
+        .then((weights) => {
+          if (!weights) return; // aborted (no influencing tierlists)
+          const { shuffledQueue, positions } = megaShuffleQueue(
+            baseQueue,
+            weights,
+            currentQueue.currentSongIndex ?? undefined
+          );
+          storage.queue.setQueue({
+            ...currentQueue,
+            queue: shuffledQueue,
+            queueBeforeShuffle: positions,
+            currentSongIndex: 0
+          });
+          toggleShuffling(false); // mutual exclusivity with the normal shuffle
+          dispatch({ type: 'TOGGLE_TIER_SHUFFLE_STATE', data: true });
+          // No playSong() call — the current track keeps playing seamlessly.
+          addNewNotifications([
+            { id: 'tierShuffleOn', duration: 4000, content: t('player.tierShuffleOn') }
+          ]);
+        })
+        .catch((err) => console.error(err));
+    },
+    [addNewNotifications, t, toggleShuffling]
+  );
+
   const updateQueueData = useCallback(
     (
       currentSongIndex?: number | null,
@@ -1843,6 +1921,7 @@ export default function App() {
       toggleMutedState,
       toggleRepeat,
       toggleShuffling,
+      toggleTierShuffle,
       toggleIsFavorite,
       toggleSongPlayback,
       updateQueueData,
@@ -1877,6 +1956,7 @@ export default function App() {
       toggleMutedState,
       toggleRepeat,
       toggleShuffling,
+      toggleTierShuffle,
       toggleIsFavorite,
       toggleSongPlayback,
       updateQueueData,

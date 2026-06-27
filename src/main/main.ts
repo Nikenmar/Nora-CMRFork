@@ -53,6 +53,7 @@ import noraAppIcon from '../../resources/logo_light_mode.png?asset';
 import logger from './logger';
 import roundTo from '../common/roundTo';
 import { createReadStream, existsSync, statSync } from 'fs';
+import { readFile } from 'fs/promises';
 
 // / / / / / / / CONSTANTS / / / / / / / / /
 const DEFAULT_APP_PROTOCOL = 'nora';
@@ -463,16 +464,33 @@ const handleFileProtocol = async (request: GlobalRequest): Promise<GlobalRespons
 
     const mimeType = mime.getType(filePath) || 'application/octet-stream';
 
+    // Images are small and don't need range streaming. Serving them as a full
+    // buffer (instead of a Node stream) avoids a crash where a cancelled request
+    // — e.g. navigating away from a tierlist while hundreds of covers are still
+    // loading — double-closes the response's ReadableByteStreamController.
+    if (mimeType.startsWith('image/')) {
+      const buffer = await readFile(filePath);
+      return new Response(buffer, {
+        status: 200,
+        headers: {
+          'Content-Type': mimeType,
+          'Content-Length': buffer.length.toString(),
+          'Cache-Control': 'private, max-age=604800'
+        }
+      });
+    }
+
     const stream = createReadStream(filePath, { start, end });
+    const headers: Record<string, string> = {
+      'Content-Type': mimeType,
+      'Content-Range': `bytes ${start}-${end}/${fileStat.size}`,
+      'Accept-Ranges': 'bytes',
+      'Content-Length': chunkSize.toString()
+    };
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     return new Response(stream as any, {
       status: range ? 206 : 200,
-      headers: {
-        'Content-Type': mimeType,
-        'Content-Range': `bytes ${start}-${end}/${fileStat.size}`,
-        'Accept-Ranges': 'bytes',
-        'Content-Length': chunkSize.toString()
-      }
+      headers
     });
   } catch (error) {
     logger.error('Error handling media protocol:', { error });

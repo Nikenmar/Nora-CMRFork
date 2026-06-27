@@ -73,6 +73,13 @@ const Sidebar = memo(() => {
         isActive: false
       },
       {
+        id: 'Tierlists',
+        parentClassName: 'tierlists',
+        icon: 'leaderboard',
+        content: t('sideBar.tierlists'),
+        isActive: false
+      },
+      {
         id: 'Settings',
         parentClassName: 'settings',
         icon: 'settings',

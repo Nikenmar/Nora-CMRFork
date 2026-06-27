@@ -73,6 +73,11 @@ export const BLACKLIST_TEMPLATE: Blacklist = {
   folderBlacklist: []
 };
 
+// ? Tierlists are stored in their own isolated file. On installs that predate
+// ? this feature the file simply doesn't exist and is created fresh on first
+// ? access, so no existing store/schema/migration is ever touched.
+export const TIERLIST_DATA_TEMPLATE: SavableTierlist[] = [];
+
 export const PALETTE_DATA_TEMPLATE: PaletteData[] = [DEFAULT_SONG_PALETTE];
 
 const songStore = new Store({
@@ -213,6 +218,21 @@ const blacklistStore = new Store({
   migrations: blacklistMigrations
 });
 
+const tierlistStore = new Store({
+  name: 'tierlists',
+  clearInvalidConfig: true,
+  defaults: {
+    version,
+    tierlists: TIERLIST_DATA_TEMPLATE
+  },
+  schema: {
+    version: { type: ['string', 'null'] },
+    tierlists: {
+      type: 'array'
+    }
+  }
+});
+
 const paletteStore = new Store({
   name: 'palettes',
   defaults: {
@@ -246,6 +266,10 @@ let cachedUserData: UserData = userDataStore.get('userData', USER_DATA_TEMPLATE)
 let cachedListeningData = listeningDataStore.get('listeningData', []) as SongListeningData[];
 let cachedBlacklist = blacklistStore.get('blacklist', BLACKLIST_TEMPLATE) as Blacklist;
 let cachedPaletteData = paletteStore.get('palettes', PALETTE_DATA_TEMPLATE) as PaletteData[];
+let cachedTierlistsData = tierlistStore.get(
+  'tierlists',
+  TIERLIST_DATA_TEMPLATE
+) as SavableTierlist[];
 
 // ? USER DATA GETTERS AND SETTERS
 
@@ -534,6 +558,23 @@ export const setPlaylistData = (updatedPlaylists: SavablePlaylist[]) => {
   playlistDataStore.set('playlists', updatedPlaylists);
 };
 
+// ? TIERLIST DATA GETTERS AND SETTERS
+
+export const getTierlistData = (tierlistIds = [] as string[]): SavableTierlist[] => {
+  const data =
+    Array.isArray(cachedTierlistsData) && cachedTierlistsData.length !== 0
+      ? cachedTierlistsData
+      : (tierlistStore.get('tierlists', TIERLIST_DATA_TEMPLATE) as SavableTierlist[]);
+
+  if (!tierlistIds || tierlistIds.length === 0) return data;
+  return data.filter((tierlist) => tierlistIds.includes(tierlist.tierlistId));
+};
+
+export const setTierlistData = (updatedTierlists: SavableTierlist[]) => {
+  cachedTierlistsData = updatedTierlists;
+  tierlistStore.set('tierlists', updatedTierlists);
+};
+
 // ? BLACKLIST DATA GETTERS AND SETTERS
 export const getBlacklistData = (): Blacklist => {
   if (
@@ -615,6 +656,7 @@ export const resetAppCache = () => {
   cachedAlbumsData = [];
   cachedGenresData = [];
   cachedPlaylistsData = [...PLAYLIST_DATA_TEMPLATE];
+  cachedTierlistsData = [...TIERLIST_DATA_TEMPLATE];
   cachedUserData = { ...USER_DATA_TEMPLATE };
   songStore.store = { version, songs: [] };
   artistStore.store = { version, artists: [] };
@@ -622,5 +664,6 @@ export const resetAppCache = () => {
   genreStore.store = { version, genres: [] };
   userDataStore.store = { version, userData: USER_DATA_TEMPLATE };
   playlistDataStore.store = { version, playlists: PLAYLIST_DATA_TEMPLATE };
+  tierlistStore.store = { version, tierlists: TIERLIST_DATA_TEMPLATE };
   logger.info(`In-app cache reset successfully.`);
 };

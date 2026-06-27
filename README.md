@@ -1,45 +1,72 @@
-# Nora - CMR Fork
+# Nora — CMR Fork
 
-This is a custom fork of the Nora music player that fixes the most annoying FLAC playback issues and brings significant stability improvements.
+My personal fork of [Nora](https://github.com/Sandakan/Nora).
 
-## The Infamous FLAC / Demuxer Crash
+It started as a one-line fix for a crash and grew from there. By now it's Nora `v3.1.0` with a proper set of additions on top - a built-in tier-list maker, a smart shuffle that actually uses your rankings, and a handful of fixes I wanted out of the player.
 
-If you've encountered a sudden playback crash ("An error occurred") when playing high-quality FLAC or MP3 files, it is highly likely due to a Chromium demuxer crash:
+---
+
+## The crash that started this
+
+If Nora ever died with "An error occurred" on a high-quality FLAC (or some MP3s), this was it:
 
 ![Chromium Demuxer Error](error_screenshot.png)
 
-#### The Root Cause
-Nora uses `node-taglib-sharp` to read metadata (tags, album covers) from audio files. Sometimes, audio files contain embedded pictures with an empty or undefined MIME type field (either due to improper tag editing, encoding bugs, or different tag formats). 
+Nora reads album art out of the file's tags. Some files have an embedded picture with an **empty MIME type** usually from bad tag editors or weird encoders. When Chromium tries to demux a track whose cover has no MIME type, it throws `DEMUXER_ERROR_COULD_NOT_OPEN` and kills playback.
 
-When Chromium attempts to load and demux the audio stream containing an image with a missing or null MIME descriptor, the native multimedia pipeline gets corrupted, throwing a fatal **`DEMUXER_ERROR_COULD_NOT_OPEN`** exception. This instantly kills the audio channel and crashes the player UI.
-
-#### The Auto-Heal Fix
-In this fork, I implemented a proactive Auto-Healing system inside the main process song parser (`src/main/parseSong/parseSong.ts` & `reParseSong.ts`):
+The fix: before playing, if a picture's MIME type is blank, set it to `image/jpeg` and write it back.
 
 ```typescript
-// Auto-heal empty MIME types in pictures (fixes Chromium DEMUXER_ERROR_COULD_NOT_OPEN)
-if (file.tag && file.tag.pictures && file.tag.pictures.length > 0) {
+// Fixes Chromium DEMUXER_ERROR_COULD_NOT_OPEN
+if (file.tag?.pictures?.length > 0) {
   let needsSave = false;
   for (const pic of file.tag.pictures) {
     if (!pic.mimeType || pic.mimeType.trim() === '') {
       pic.mimeType = 'image/jpeg';
       needsSave = true;
-      logger.info(`Auto-healed empty MIME type for picture.`, { absoluteFilePath });
     }
   }
   if (needsSave) file.save();
 }
 ```
 
-* **How it works:** When Nora parses a song, it inspects the embedded pictures array. If any image tag has an empty, missing, or whitespace-only `mimeType`, Nora automatically fixes it by writing `'image/jpeg'` as the default MIME type and immediately saves the tags back to the file using `file.save()`.
-* **The Result:** The file tags are permanently repaired, and Chromium can safely load the image and play the music without throwing any demuxer errors.
+It runs in the song parser (`src/main/parseSong/`), so a file gets healed on first scan and the repair is saved to disk - fixed once, then fine.
+
+Stock `v3.1.0` can't edit FLAC tags (it only reads them with `music-metadata` and edits MP3s with `node-id3`). I'd written this for the unreleased `v4` alpha, but that branch was too unstable to use, so I pulled `node-taglib-sharp` into `v3.1.0` by hand and backported the fix here.
 
 ---
 
-###  Note
+## Tierlists
 
-> This fork is actually a unique hybrid. The FLAC auto-healing was originally designed and fully implemented for the next-generation **`v4.0.0-alpha.4`** branch of Nora (which natively uses `node-taglib-sharp`). However, since the `v4` alpha codebase is still in development and proved too unstable for daily using, the decision was made to **backport / cherry-pick** these critical fixes back to the solid **`v3.1.0-stable`** codebase.
-> 
-> Since Nora `v3.1.0` lacks any native FLAC tag editing capabilities out of the box (it only uses `music-metadata` for read-only tag parsing and `node-id3` for editing MP3 tags), i manually backported the tag-repair logic and successfully integrated the heavy-lifting **`node-taglib-sharp`** library down into `v3.1.0`. 
-> 
-> As a result, this fork delivers a bulletproof daily driver experience: combining the ultimate stability of the `v3` stable release with the advanced metadata auto-healing capabilities of the future `v4` release.
+I used to rank my music in a separate web app and got tired of it living outside the player, so I built a tier-list maker into Nora, new tab next to Genres.
+
+- The **image pool comes from your playlists, live**. Pick one or more playlists as the source; their tracks show up as cards, covers and all. Add a song to the playlist, it appears in the pool.
+- **S / A / B / C / D / E / F** tiers in the original tiermaker colors. Rename / add / remove rows.
+- Drag and drop, auto-scroll near the edges, right-click for play / song info / artist.
+- Hover **play button** on cards to audition while ranking.
+- Captions show **track** or **artist - track**.
+- **Export to PNG.**
+- Handles thousands of tracks fine - covers are cached thumbnails and off-screen cards aren't decoded.
+
+Tier lists are stored in their own `tierlists.json`, separate from everything else, so updates won't touch your library or lose your rankings.
+
+---
+
+## Smart Shuffle (Tierlist Value Shuffle)
+
+A second shuffle mode (the magic-wand button by the normal one) that weights the order toward music you actually rate:
+
+- Higher-ranked tracks come up more (S over F).
+- Artists get a boost from how high **and** how many of their tracks you've ranked - so a song that isn't in any tier list can still surface because it's by someone you clearly love.
+- Listening counts nudge it a bit.
+- Recently played tracks get pushed back, so it doesn't loop the same handful at you.
+
+It's about **60% smart / 40% random** - leans, doesn't rig. Only tier lists you mark as "influencing" count, and it won't turn on if none are. Like the normal shuffle, it reorders your current queue and keeps the playing track, so you stay in the same context. The two shuffles are mutually exclusive.
+
+---
+
+## Credits
+
+Built on [Nora](https://github.com/Sandakan/Nora) by [Sandakan](https://github.com/Sandakan).
+
+Built for my own daily use. Auto-updates are off on purpose so upstream releases don't overwrite these changes.

@@ -25,6 +25,8 @@ const LyricsEditingPage = lazy(() => import('./LyricsEditingPage/LyricsEditingPa
 const SongsPage = lazy(() => import('./SongsPage/SongsPage'));
 const MusicFoldersPage = lazy(() => import('./MusicFoldersPage/MusicFoldersPage'));
 const MusicFolderInfoPage = lazy(() => import('./MusicFolderInfoPage/MusicFolderInfoPage'));
+const TierlistsPage = lazy(() => import('./TierlistsPage/TierlistsPage'));
+const TierlistEditorPage = lazy(() => import('./TierlistEditorPage/TierlistEditorPage'));
 
 const isPageDataEmpty = (pageData: PageData | undefined) =>
   !pageData || Object.keys(pageData).length === 0;
@@ -78,6 +80,9 @@ const Body = memo(() => {
           {currentlyActivePage.pageTitle === 'Folders' && <MusicFoldersPage />}
           {currentlyActivePage.pageTitle === 'Search' && <SearchPage />}
           {currentlyActivePage.pageTitle === 'Genres' && <GenresPage />}
+          {currentlyActivePage.pageTitle === 'Tierlists' && <TierlistsPage />}
+          {currentlyActivePage.pageTitle === 'TierlistEditor' &&
+            !isPageDataEmpty(currentlyActivePage.data) && <TierlistEditorPage />}
           {currentlyActivePage.pageTitle === 'AllSearchResults' && <AllSearchResultsPage />}
           {currentlyActivePage.pageTitle === 'Settings' && <SettingsPage />}
           {currentlyActivePage.pageTitle === 'Lyrics' && <LyricsPage />}

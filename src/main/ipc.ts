@@ -49,6 +49,9 @@ import removeSongFromPlaylist from './core/removeSongFromPlaylist';
 import addSongsToPlaylist from './core/addSongsToPlaylist';
 import removePlaylists from './core/removePlaylists';
 import addNewPlaylist from './core/addNewPlaylist';
+import { addTierlist, removeTierlists, saveTierlist, sendTierlistData } from './core/tierlists';
+import getTierlistArtworks from './core/getTierlistArtworks';
+import getMegaShuffleWeights from './core/megaShuffle';
 import getAllSongs from './core/getAllSongs';
 import toggleLikeArtists from './core/toggleLikeArtists';
 import fetchSongInfoFromLastFM from './core/fetchSongInfoFromLastFM';
@@ -338,6 +341,35 @@ export function initializeIPC(mainWindow: BrowserWindow, abortSignal: AbortSigna
 
     ipcMain.handle('app/removePlaylists', (_, playlistIds: string[]) =>
       removePlaylists(playlistIds)
+    );
+
+    // $ TIERLISTS
+    ipcMain.handle(
+      'app/getTierlistData',
+      (_, tierlistIds?: string[], sortType?: TierlistSortTypes) =>
+        sendTierlistData(tierlistIds, sortType)
+    );
+
+    ipcMain.handle(
+      'app/addTierlist',
+      (_, name: string, sourcePlaylistIds?: string[], labelMode?: TierlistLabelMode) =>
+        addTierlist(name, sourcePlaylistIds, labelMode)
+    );
+
+    ipcMain.handle('app/saveTierlist', (_, updatedTierlist: SavableTierlist) =>
+      saveTierlist(updatedTierlist)
+    );
+
+    ipcMain.handle('app/removeTierlists', (_, tierlistIds: string[]) =>
+      removeTierlists(tierlistIds)
+    );
+
+    ipcMain.handle('app/getTierlistArtworks', (_, songIds: string[]) =>
+      getTierlistArtworks(songIds)
+    );
+
+    ipcMain.handle('app/getMegaShuffleWeights', (_, songIds: string[]) =>
+      getMegaShuffleWeights(songIds)
     );
 
     ipcMain.handle('app/addSongsToPlaylist', (_, playlistId: string, songIds: string[]) =>

@@ -229,6 +229,8 @@ declare global {
     isRepeating: RepeatTypes;
     songPosition: number;
     isShuffling: boolean;
+    /** Tierlist (Mega Smart) Shuffle mode — mutually exclusive with isShuffling. */
+    isTierShuffling: boolean;
     isPlayerStalled: boolean;
     playbackRate: number;
   }
@@ -618,6 +620,7 @@ declare global {
     albumsPage?: AlbumSortTypes;
     genresPage?: GenreSortTypes;
     musicFoldersPage?: FolderSortTypes;
+    tierlistsPage?: TierlistSortTypes;
   }
 
   interface LyricsEditorSettings {
@@ -650,6 +653,41 @@ declare global {
 
   interface Playlist extends SavablePlaylist {
     artworkPaths: ArtworkPaths;
+  }
+
+  // ? Tierlist related types
+
+  /** How a card caption is rendered inside a tierlist. */
+  type TierlistLabelMode = 'track' | 'artistAndTrack';
+
+  /** A single ranked row inside a tierlist (e.g. S, A, B ...). */
+  interface TierRow {
+    tierId: string;
+    /** User editable label shown on the colored band. */
+    name: string;
+    /** Ordered songIds placed in this tier. Filtered against the live pool on render. */
+    items: string[];
+  }
+
+  /**
+   * Persisted shape of a tierlist (stored in the isolated `tierlists.json` store).
+   * The image pool is NOT stored — it is derived live from `sourcePlaylistIds`
+   * (union of their songs, minus songs already placed in a tier) so editing a
+   * source playlist instantly reflects in the pool.
+   */
+  interface SavableTierlist {
+    tierlistId: string;
+    name: string;
+    createdDate: Date;
+    /** Playlists whose songs make up the live image pool. */
+    sourcePlaylistIds: string[];
+    /** Ordered tier rows, each holding its placed songIds. */
+    tiers: TierRow[];
+    labelMode: TierlistLabelMode;
+    /** Show a hover play button on each card. Defaults to true when undefined. */
+    showPlayButton?: boolean;
+    /** When true, this tierlist's rankings feed the Tierlist (Mega Smart) Shuffle. */
+    influencesShuffle?: boolean;
   }
 
   // ? Genre related types
@@ -1025,6 +1063,8 @@ declare global {
 
   type PlaylistSortTypes = 'aToZ' | 'zToA' | 'noOfSongsAscending' | 'noOfSongsDescending';
 
+  type TierlistSortTypes = 'aToZ' | 'zToA' | 'dateAddedAscending' | 'dateAddedDescending';
+
   type AlbumSortTypes = 'aToZ' | 'zToA' | 'noOfSongsAscending' | 'noOfSongsDescending';
 
   type GenreSortTypes = 'aToZ' | 'zToA' | 'noOfSongsAscending' | 'noOfSongsDescending';
@@ -1062,6 +1102,8 @@ declare global {
     | 'CurrentQueue'
     | 'SongTagsEditor'
     | 'LyricsEditor'
+    | 'Tierlists'
+    | 'TierlistEditor'
     | 'AllSearchResults';
 
   type PromiseFunctionReturn = Promise<{ success: boolean; message?: string }>;
@@ -1119,7 +1161,11 @@ declare global {
     | 'settings/preferences'
     | 'blacklist'
     | 'blacklist/songBlacklist'
-    | 'blacklist/folderBlacklist';
+    | 'blacklist/folderBlacklist'
+    | 'tierlists'
+    | 'tierlists/newTierlist'
+    | 'tierlists/updatedTierlist'
+    | 'tierlists/deletedTierlist';
 
   interface DataUpdateEvent {
     dataType: DataUpdateEventTypes;

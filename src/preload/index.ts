@@ -383,6 +383,31 @@ const playlistsData = {
   importPlaylist: (): Promise<void> => ipcRenderer.invoke('app/importPlaylist')
 };
 
+// $ TIERLIST DATA AND CONTROLS
+const tierlistsData = {
+  getTierlistData: (
+    tierlistIds?: string[],
+    sortType?: TierlistSortTypes
+  ): Promise<SavableTierlist[]> =>
+    ipcRenderer.invoke('app/getTierlistData', tierlistIds, sortType),
+  addTierlist: (
+    name: string,
+    sourcePlaylistIds?: string[],
+    labelMode?: TierlistLabelMode
+  ): Promise<{ success: boolean; message?: string; tierlist?: SavableTierlist }> =>
+    ipcRenderer.invoke('app/addTierlist', name, sourcePlaylistIds, labelMode),
+  saveTierlist: (
+    updatedTierlist: SavableTierlist
+  ): Promise<{ success: boolean; message?: string }> =>
+    ipcRenderer.invoke('app/saveTierlist', updatedTierlist),
+  removeTierlists: (tierlistIds: string[]): Promise<{ success: boolean; message?: string }> =>
+    ipcRenderer.invoke('app/removeTierlists', tierlistIds),
+  getTierlistArtworks: (songIds: string[]): Promise<Record<string, string>> =>
+    ipcRenderer.invoke('app/getTierlistArtworks', songIds),
+  getMegaShuffleWeights: (songIds: string[]): Promise<Record<string, number>> =>
+    ipcRenderer.invoke('app/getMegaShuffleWeights', songIds)
+};
+
 // $ APP LOGS
 const log = {
   sendLogs: (
@@ -488,6 +513,7 @@ export const api = {
   genresData,
   albumsData,
   playlistsData,
+  tierlistsData,
   log,
   miniPlayer,
   settingsHelpers,

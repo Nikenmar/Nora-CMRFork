@@ -359,6 +359,17 @@ input[type='checkbox']:checked ~ .checkmark .icon {
 }
 
 /* ? / / / /  KEYFRAMES / / / / / / / */
+/* Tierlist drag-and-drop (SortableJS) feedback */
+.tierlist-ghost {
+  opacity: 0.35;
+  outline: 2px dashed hsl(var(--text-color-highlight));
+  outline-offset: -2px;
+}
+
+.tierlist-ghost > * {
+  visibility: hidden;
+}
+
 .appear-from-bottom {
   opacity: 0;
   transform: translateY(2rem);
