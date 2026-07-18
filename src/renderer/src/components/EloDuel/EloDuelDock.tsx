@@ -11,7 +11,6 @@ const EloDuelDock = () => {
   const pendingDuels = useStore(store, (state) => state.localStorage.duels?.pendingDuels ?? 0);
 
   const [activePair, setActivePair] = useState<DuelPair>();
-  const [sessionQueuedDuels, setSessionQueuedDuels] = useState(0);
   const [isExpanded, setIsExpanded] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
 
@@ -40,7 +39,6 @@ const EloDuelDock = () => {
       .then((pair) => {
         if (pair) {
           setActivePair(pair);
-          setSessionQueuedDuels(pendingDuels);
           setIsExpanded(true);
         }
         return undefined;
@@ -50,14 +48,13 @@ const EloDuelDock = () => {
         loadingRef.current = false;
         setIsLoading(false);
       });
-  }, [activePair, pendingDuels]);
+  }, [activePair]);
 
   const minimizeDuel = useCallback(() => setIsExpanded(false), []);
 
   const closeDuel = useCallback(() => {
     setIsExpanded(false);
     setActivePair(undefined);
-    setSessionQueuedDuels(0);
   }, []);
 
   const showDock = !isExpanded;
@@ -115,7 +112,7 @@ const EloDuelDock = () => {
             <div className="px-8 pb-8 pt-6">
               <EloDuelPrompt
                 initialPair={activePair}
-                queuedDuels={sessionQueuedDuels}
+                queuedDuels={pendingDuels}
                 onClose={closeDuel}
                 onMinimize={minimizeDuel}
               />

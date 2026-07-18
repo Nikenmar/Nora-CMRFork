@@ -23,18 +23,17 @@ const EloDuelPrompt = (props: EloDuelPromptProps) => {
   const { t } = useTranslation();
   const { initialPair, queuedDuels, onClose, onMinimize } = props;
 
-  const initialQueuedDuels = Math.max(0, queuedDuels ?? 0);
-  const isQueuedBatch = initialQueuedDuels > 0;
+  const persistedQueuedDuels = Math.max(0, queuedDuels ?? 0);
   const [pair, setPair] = useState<DuelPair>(initialPair);
   const [phase, setPhase] = useState<DuelPhase>('voting');
   const [result, setResult] = useState<DuelResult>();
   const [winnerSongId, setWinnerSongId] = useState<string>();
   const [previewingSongId, setPreviewingSongId] = useState<string>();
-  const [remainingQueuedDuels, setRemainingQueuedDuels] = useState(initialQueuedDuels);
+  const [remainingQueuedDuels, setRemainingQueuedDuels] = useState(persistedQueuedDuels);
   const [showNextRetry, setShowNextRetry] = useState(false);
 
   const previewAudioRef = useRef<HTMLAudioElement | null>(null);
-  const remainingQueuedDuelsRef = useRef(initialQueuedDuels);
+  const remainingQueuedDuelsRef = useRef(persistedQueuedDuels);
   const actionLockedRef = useRef(false);
   const completionTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -58,6 +57,14 @@ const EloDuelPrompt = (props: EloDuelPromptProps) => {
     },
     []
   );
+
+  // The dock can already hold a minimized manual session when a new automatic
+  // duel arrives. Keep that existing prompt attached to the persisted backlog
+  // instead of freezing the queue size from the session's first render.
+  useEffect(() => {
+    remainingQueuedDuelsRef.current = persistedQueuedDuels;
+    setRemainingQueuedDuels(persistedQueuedDuels);
+  }, [persistedQueuedDuels]);
 
   const togglePreview = useCallback(
     (entry: DuelSongEntry) => {
@@ -102,7 +109,7 @@ const EloDuelPrompt = (props: EloDuelPromptProps) => {
   }, [onMinimize, stopPreview]);
 
   const consumeQueuedDuel = useCallback(() => {
-    if (!isQueuedBatch || remainingQueuedDuelsRef.current === 0) return;
+    if (remainingQueuedDuelsRef.current === 0) return;
 
     const remaining = Math.max(0, remainingQueuedDuelsRef.current - 1);
     remainingQueuedDuelsRef.current = remaining;
@@ -110,7 +117,7 @@ const EloDuelPrompt = (props: EloDuelPromptProps) => {
 
     const persistedPendingDuels = storage.duels.getDuelsData('pendingDuels') ?? 0;
     storage.duels.setDuelsData('pendingDuels', Math.max(0, persistedPendingDuels - 1));
-  }, [isQueuedBatch]);
+  }, []);
 
   const fetchNextPair = useCallback(
     (fallbackPhase: DuelPhase) => {
@@ -202,7 +209,7 @@ const EloDuelPrompt = (props: EloDuelPromptProps) => {
           />
         )}
       </div>
-      {isQueuedBatch && remainingQueuedDuels > 0 && (
+      {remainingQueuedDuels > 0 && (
         <div className="-mt-4 mb-5 text-center text-sm opacity-70">
           {t('eloDuels.queuedRemaining', { count: remainingQueuedDuels })}
         </div>
