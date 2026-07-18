@@ -22,6 +22,7 @@ import { AppUpdateContext, type AppUpdateContextType } from './contexts/AppUpdat
 
 // ? HOOKS
 import useNetworkConnectivity from './hooks/useNetworkConnectivity';
+import useDuelInvite from './hooks/useDuelInvite';
 
 // ? MAIN APP COMPONENTS
 import TitleBar from './components/TitleBar/TitleBar';
@@ -587,6 +588,9 @@ export default function App() {
     },
     []
   );
+
+  // ELO duel invites: listens-driven cadence, surfaced by the persistent dock.
+  useDuelInvite();
 
   const toggleSongPlayback = useCallback(
     (startPlay?: boolean) => {
@@ -1559,6 +1563,13 @@ export default function App() {
       const updatedSelectionData = store.state.multipleSelectionsData;
 
       if (typeof isEnabled === 'boolean') {
+        // Selection now survives navigation — never mix id kinds: switching the
+        // selection type drops the previous selection instead of merging into it.
+        if (
+          selectionType !== updatedSelectionData.selectionType &&
+          updatedSelectionData.selectionType !== undefined
+        )
+          updatedSelectionData.multipleSelections = [];
         updatedSelectionData.selectionType = selectionType;
 
         if (Array.isArray(addSelections) && isEnabled === true)
@@ -1608,7 +1619,6 @@ export default function App() {
         navigationHistory.history.push(pageData);
         navigationHistory.pageHistoryIndex += 1;
 
-        toggleMultipleSelections(false);
         log(`User navigated to '${pageClass}'`);
 
         dispatch({
@@ -1626,7 +1636,7 @@ export default function App() {
           }
         ]);
     },
-    [addNewNotifications, t, toggleMultipleSelections]
+    [addNewNotifications, t]
   );
 
   const updatePlayerType = useCallback((type: PlayerTypes) => {

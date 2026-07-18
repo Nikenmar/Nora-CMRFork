@@ -197,7 +197,6 @@ export const Album = (props: AlbumProp) => {
         handlerFunction: () => {
           if (isMultipleSelectionsEnabled) playAlbumSongsForMultipleSelections();
           else playAlbumSongs();
-          toggleMultipleSelections(false);
         }
       },
       {
@@ -208,7 +207,6 @@ export const Album = (props: AlbumProp) => {
         handlerFunction: () => {
           if (isMultipleSelectionsEnabled) playAlbumSongsForMultipleSelections(true);
           else playAlbumSongs(true);
-          toggleMultipleSelections(false);
         }
       },
       {
@@ -229,7 +227,6 @@ export const Album = (props: AlbumProp) => {
               }
             ]);
           }
-          toggleMultipleSelections(false);
         }
       },
       {

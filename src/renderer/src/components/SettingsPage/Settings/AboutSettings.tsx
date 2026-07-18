@@ -13,7 +13,7 @@ import storage from '../../../utils/localStorage';
 
 import { version, author, homepage, bugs, urls } from '../../../../../../package.json';
 import openSourceLicenses from '../../../../../../open_source_licenses.txt?raw';
-import appLicense from '../../../../../../LICENSE.txt?raw';
+import appLicense from '../../../../../../LICENSE?raw';
 import localReleaseNotes from '../../../../../../release-notes.json';
 
 import AppIcon from '../../../assets/images/webp/logo_light_mode.webp';
@@ -418,10 +418,10 @@ const AboutSettings = () => {
             />
 
             <div className="mt-4 border-t border-background-color-2 pt-4 dark:border-dark-background-color-2">
-              <div className="font-medium text-font-color-highlight dark:text-dark-font-color-highlight mb-1">
+              <div className="mb-1 font-medium text-font-color-highlight dark:text-dark-font-color-highlight">
                 About CMR Fork
               </div>
-              <p className="text-xs text-font-color-black opacity-80 dark:text-font-color-white font-light">
+              <p className="text-xs font-light text-font-color-black opacity-80 dark:text-font-color-white">
                 This is a custom fork developed and maintained by{' '}
                 <Hyperlink
                   link="https://github.com/nikenmar"

@@ -176,7 +176,6 @@ const Genre = (props: GenreProp) => {
         handlerFunction: () => {
           if (isMultipleSelectionsEnabled) playGenreSongsForMultipleSelections();
           else playGenreSongs();
-          toggleMultipleSelections(false);
         }
       },
       {
@@ -187,7 +186,6 @@ const Genre = (props: GenreProp) => {
         handlerFunction: () => {
           if (isMultipleSelectionsEnabled) playGenreSongsForMultipleSelections(true);
           else playGenreSongs(true);
-          toggleMultipleSelections(false);
         }
       },
       {
@@ -208,7 +206,6 @@ const Genre = (props: GenreProp) => {
               }
             ]);
           }
-          toggleMultipleSelections(false);
         }
       },
       {

@@ -321,6 +321,15 @@ const setLyricsEditorSettings = <
 const getLyricsEditorSettings = <Type extends keyof LyricsEditorSettings>(type: Type) =>
   getItem('lyricsEditorSettings', type);
 
+// DUELS
+
+const setDuelsData = <Type extends keyof DuelsLocalStorage, Data extends DuelsLocalStorage[Type]>(
+  type: Type,
+  data: Data
+) => setItem('duels', type, data);
+
+const getDuelsData = <Type extends keyof DuelsLocalStorage>(type: Type) => getItem('duels', type);
+
 // / / / / / / / / / /
 
 export default {
@@ -344,6 +353,7 @@ export default {
   sortingStates: { setSortingStates, getSortingStates },
   equalizerPreset: { setEqualizerPreset, getEqualizerPreset },
   lyricsEditorSettings: { setLyricsEditorSettings, getLyricsEditorSettings },
+  duels: { setDuelsData, getDuelsData },
   checkLocalStorage,
   getLocalStorage,
   setLocalStorage,

@@ -27,6 +27,7 @@ const MusicFoldersPage = lazy(() => import('./MusicFoldersPage/MusicFoldersPage'
 const MusicFolderInfoPage = lazy(() => import('./MusicFolderInfoPage/MusicFolderInfoPage'));
 const TierlistsPage = lazy(() => import('./TierlistsPage/TierlistsPage'));
 const TierlistEditorPage = lazy(() => import('./TierlistEditorPage/TierlistEditorPage'));
+const StatsPage = lazy(() => import('./StatsPage/StatsPage'));
 
 const isPageDataEmpty = (pageData: PageData | undefined) =>
   !pageData || Object.keys(pageData).length === 0;
@@ -81,6 +82,7 @@ const Body = memo(() => {
           {currentlyActivePage.pageTitle === 'Search' && <SearchPage />}
           {currentlyActivePage.pageTitle === 'Genres' && <GenresPage />}
           {currentlyActivePage.pageTitle === 'Tierlists' && <TierlistsPage />}
+          {currentlyActivePage.pageTitle === 'Stats' && <StatsPage />}
           {currentlyActivePage.pageTitle === 'TierlistEditor' &&
             !isPageDataEmpty(currentlyActivePage.data) && <TierlistEditorPage />}
           {currentlyActivePage.pageTitle === 'AllSearchResults' && <AllSearchResultsPage />}

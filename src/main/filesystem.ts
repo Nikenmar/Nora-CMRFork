@@ -78,6 +78,15 @@ export const BLACKLIST_TEMPLATE: Blacklist = {
 // ? access, so no existing store/schema/migration is ever touched.
 export const TIERLIST_DATA_TEMPLATE: SavableTierlist[] = [];
 
+// ? CMR stats (ELO duels, stats-import guard) follow the same isolated-file
+// ? rule as tierlists: `cmr_stats.json` is created fresh on first access and
+// ? never touches existing stores/schemas/migrations. Invariant: writers never
+// ? mutate this data in place — always persist a fresh object via setCmrStatsData.
+export const CMR_STATS_TEMPLATE: CmrStatsData = {
+  elo: { ratings: {}, history: [], totalDuels: 0 },
+  importedStatsExportIds: []
+};
+
 export const PALETTE_DATA_TEMPLATE: PaletteData[] = [DEFAULT_SONG_PALETTE];
 
 const songStore = new Store({
@@ -233,6 +242,19 @@ const tierlistStore = new Store({
   }
 });
 
+const cmrStatsStore = new Store({
+  name: 'cmr_stats',
+  clearInvalidConfig: true,
+  defaults: {
+    version,
+    cmrStats: CMR_STATS_TEMPLATE
+  },
+  schema: {
+    version: { type: ['string', 'null'] },
+    cmrStats: { type: 'object' }
+  }
+});
+
 const paletteStore = new Store({
   name: 'palettes',
   defaults: {
@@ -270,6 +292,7 @@ let cachedTierlistsData = tierlistStore.get(
   'tierlists',
   TIERLIST_DATA_TEMPLATE
 ) as SavableTierlist[];
+let cachedCmrStatsData = cmrStatsStore.get('cmrStats', CMR_STATS_TEMPLATE) as CmrStatsData;
 
 // ? USER DATA GETTERS AND SETTERS
 
@@ -478,8 +501,14 @@ export const getListeningData = (songIds = [] as string[]): SongListeningData[] 
       ? cachedListeningData
       : (listeningDataStore.get('listeningData', []) as SongListeningData[]);
 
+  // Builds before v3.3.0 appended snapshot duplicates for the same song.
+  // The last snapshot is the newest one, so expose one canonical row per song
+  // without rewriting the user's store during a read.
+  const uniqueData = [...new Map(data.map((entry) => [entry.songId, entry] as const)).values()];
   const results =
-    songIds.length === 0 ? data : data.filter((x) => songIds.some((songId) => x.songId === songId));
+    songIds.length === 0
+      ? uniqueData
+      : uniqueData.filter((x) => songIds.some((songId) => x.songId === songId));
 
   if (results.length === 0) {
     if (songIds.length === 0) return [];
@@ -516,20 +545,19 @@ export const setListeningData = (data: SongListeningData) => {
       ? cachedListeningData
       : (listeningDataStore.get('listeningData', []) as SongListeningData[]);
 
-  for (let i = 0; i < results.length; i += 1) {
-    if (results[i].songId === data.songId) {
-      results[i].skips = data.skips;
-      results[i].fullListens = data.fullListens;
-      results[i].inNoOfPlaylists = data.inNoOfPlaylists;
-      results[i].listens = data.listens;
-      results[i].seeks = data.seeks;
+  // Keep exactly one row per song. The old implementation updated the first
+  // match and then unconditionally pushed the same snapshot again, causing
+  // listening_data.json (and aggregate stats) to grow on every listen.
+  let replaced = false;
+  const updatedResults = results.flatMap((entry) => {
+    if (entry.songId !== data.songId) return [entry];
+    if (replaced) return [];
+    replaced = true;
+    return [data];
+  });
+  if (!replaced) updatedResults.push(data);
 
-      break;
-    }
-  }
-
-  results.push(data);
-  saveListeningData(results);
+  saveListeningData(updatedResults);
   return dataUpdateEvent('songs/listeningData');
 };
 
@@ -573,6 +601,18 @@ export const getTierlistData = (tierlistIds = [] as string[]): SavableTierlist[]
 export const setTierlistData = (updatedTierlists: SavableTierlist[]) => {
   cachedTierlistsData = updatedTierlists;
   tierlistStore.set('tierlists', updatedTierlists);
+};
+
+// ? CMR STATS DATA GETTERS AND SETTERS
+
+export const getCmrStatsData = (): CmrStatsData => {
+  if (cachedCmrStatsData && typeof cachedCmrStatsData === 'object') return cachedCmrStatsData;
+  return cmrStatsStore.get('cmrStats', CMR_STATS_TEMPLATE) as CmrStatsData;
+};
+
+export const setCmrStatsData = (updatedCmrStats: CmrStatsData) => {
+  cachedCmrStatsData = updatedCmrStats;
+  cmrStatsStore.set('cmrStats', updatedCmrStats);
 };
 
 // ? BLACKLIST DATA GETTERS AND SETTERS
@@ -657,6 +697,7 @@ export const resetAppCache = () => {
   cachedGenresData = [];
   cachedPlaylistsData = [...PLAYLIST_DATA_TEMPLATE];
   cachedTierlistsData = [...TIERLIST_DATA_TEMPLATE];
+  cachedCmrStatsData = { ...CMR_STATS_TEMPLATE };
   cachedUserData = { ...USER_DATA_TEMPLATE };
   songStore.store = { version, songs: [] };
   artistStore.store = { version, artists: [] };
@@ -665,5 +706,6 @@ export const resetAppCache = () => {
   userDataStore.store = { version, userData: USER_DATA_TEMPLATE };
   playlistDataStore.store = { version, playlists: PLAYLIST_DATA_TEMPLATE };
   tierlistStore.store = { version, tierlists: TIERLIST_DATA_TEMPLATE };
+  cmrStatsStore.store = { version, cmrStats: CMR_STATS_TEMPLATE };
   logger.info(`In-app cache reset successfully.`);
 };

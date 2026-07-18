@@ -481,6 +481,12 @@ export const LOCAL_STORAGE_DEFAULT_TEMPLATE: LocalStorage = {
   lyricsEditorSettings: {
     offset: 0,
     editNextAndCurrentStartAndEndTagsAutomatically: true
+  },
+  duels: {
+    frequency: 'normal',
+    lastInviteAt: 0,
+    listensSinceInvite: 0,
+    pendingDuels: 0
   }
 };
 

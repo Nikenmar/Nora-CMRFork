@@ -3,7 +3,7 @@ productName: Nora
 executableName: Nora
 copyright: Copyright © 2024 Sandakan Nipunajith
 icon: ./build/icon.ico
-artifactName: '${productName} v${version}-${os}-${arch}.${ext}'
+artifactName: '${productName}-v${version}-${os}-${arch}.${ext}'
 
 extraMetadata:
   description: Nora
@@ -72,11 +72,15 @@ win:
 nsis:
   shortcutName: '${productName}'
   allowElevation: false
-  allowToChangeInstallationDirectory: true
+  # A stable install location lets NSIS preserve the existing Start Menu/AUMID
+  # shortcut on both auto-updates and manual installs over an existing Nora.
+  # Recreating that shortcut makes Windows drop an existing taskbar pin.
+  allowToChangeInstallationDirectory: false
   createDesktopShortcut: true
+  createStartMenuShortcut: true
   installerIcon: ./build/icon.ico
   installerSidebar: ./build/installer_assets/sidebar.bmp
-  license: ./LICENSE.txt
+  license: ./LICENSE
   oneClick: false
   perMachine: false
   uninstallerIcon: ./build/icon.ico

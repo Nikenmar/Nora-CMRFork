@@ -52,6 +52,10 @@ import addNewPlaylist from './core/addNewPlaylist';
 import { addTierlist, removeTierlists, saveTierlist, sendTierlistData } from './core/tierlists';
 import getTierlistArtworks from './core/getTierlistArtworks';
 import getMegaShuffleWeights from './core/megaShuffle';
+import getStatsData from './core/getStatsData';
+import exportStatsData from './core/statsTransfer/exportStats';
+import importStatsData from './core/statsTransfer/importStats';
+import { getDuelPair, submitDuelResult } from './core/eloDuels';
 import getAllSongs from './core/getAllSongs';
 import toggleLikeArtists from './core/toggleLikeArtists';
 import fetchSongInfoFromLastFM from './core/fetchSongInfoFromLastFM';
@@ -375,6 +379,25 @@ export function initializeIPC(mainWindow: BrowserWindow, abortSignal: AbortSigna
 
     ipcMain.handle('app/getMegaShuffleWeights', (_, songIds: string[], intensity?: number) =>
       getMegaShuffleWeights(songIds, intensity)
+    );
+
+    // $ CMR STATS
+    ipcMain.handle('app/getStatsData', (_, timeRange: StatsTimeRange) => getStatsData(timeRange));
+
+    ipcMain.handle('app/exportStatsData', () => exportStatsData());
+
+    ipcMain.handle(
+      'app/importStatsData',
+      (_, mergeMode: StatsMergeMode, source: StatsImportSource) =>
+        importStatsData(mergeMode, source)
+    );
+
+    ipcMain.handle('app/getDuelPair', () => getDuelPair());
+
+    ipcMain.handle(
+      'app/submitDuelResult',
+      (_, songAId: string, songBId: string, winnerSongId: string) =>
+        submitDuelResult(songAId, songBId, winnerSongId)
     );
 
     ipcMain.handle('app/addSongsToPlaylist', (_, playlistId: string, songIds: string[]) =>

@@ -641,6 +641,7 @@ declare global {
     sortingStates: SortingStates;
     equalizerPreset: Equalizer;
     lyricsEditorSettings: LyricsEditorSettings;
+    duels: DuelsLocalStorage;
   }
 
   // ? Playlists related types
@@ -694,6 +695,183 @@ declare global {
     showPlayButton?: boolean;
     /** When true, this tierlist's rankings feed the Tierlist (Mega Smart) Shuffle. */
     influencesShuffle?: boolean;
+  }
+
+  // ? CMR stats types (ELO duels + stats aggregation + portable stats transfer)
+
+  interface EloSongRating {
+    /** ELO rating, starts at 1200. Stored with one decimal. */
+    rating: number;
+    games: number;
+    wins: number;
+    losses: number;
+    /** ms timestamp of the last duel this song took part in. */
+    lastDuelAt?: number;
+  }
+
+  interface DuelRecord {
+    /** ms timestamp of the duel. */
+    at: number;
+    songAId: string;
+    songBId: string;
+    winner: 'A' | 'B';
+    /** signed rating changes applied to song A / song B. */
+    deltaA: number;
+    deltaB: number;
+  }
+
+  interface EloData {
+    /** key = songId (local to the device owning the store). */
+    ratings: Record<string, EloSongRating>;
+    /** newest first, capped at 1000 entries. */
+    history: DuelRecord[];
+    totalDuels: number;
+  }
+
+  /**
+   * Persisted shape of the isolated `cmr_stats.json` store. On installs that
+   * predate this file it simply doesn't exist and is created fresh — no
+   * existing store/schema/migration is ever touched (tierlists pattern).
+   */
+  interface CmrStatsData {
+    elo: EloData;
+    /** exportIds already imported — anti-double-import guard. */
+    importedStatsExportIds: string[];
+  }
+
+  type StatsTimeRange = 'allTime' | 'last12Months' | 'last30Days';
+
+  /** separateDevices = sum both sides; sameOrigin = max (data originally came from this PC). */
+  type StatsMergeMode = 'separateDevices' | 'sameOrigin';
+
+  /** file = our stats export JSON; folder = a stock "Nora exports" directory. */
+  type StatsImportSource = 'file' | 'folder';
+
+  interface SongFingerprint {
+    /** songId ON THE EXPORTING DEVICE — meaningless locally (songIds are random per install). */
+    songId: string;
+    title: string;
+    /** artist names. */
+    artists: string[];
+    /** seconds (float, as stored). */
+    duration: number;
+    /** path basename, original case. */
+    fileName: string;
+  }
+
+  interface StatsExportFile {
+    format: 'nora-cmr-stats-export';
+    formatVersion: 1;
+    /** random id, generated at export. */
+    exportId: string;
+    /** ISO timestamp. */
+    exportedAt: string;
+    appVersion: string;
+    songs: SongFingerprint[];
+    listeningData: SongListeningData[];
+    /** absent when the exported data has no duels. */
+    elo?: EloData;
+  }
+
+  interface StatsImportReport {
+    success: boolean;
+    message?: string;
+    matchedSongs: number;
+    unmatchedSongs: number;
+    mergedListens: number;
+    eloMerged: boolean;
+    backupPath?: string;
+    /** exportId seen before (separateDevices double-import warning). */
+    alreadyImported?: boolean;
+  }
+
+  interface StatsSongEntry {
+    songId: string;
+    title: string;
+    artists: string[];
+    artworkPath?: string;
+    listensInRange: number;
+    /** all-time skips — filled for the "most skipped" list. */
+    skips?: number;
+  }
+
+  interface StatsNameEntry {
+    name: string;
+    artistId?: string;
+    listens: number;
+  }
+
+  interface StatsData {
+    timeRange: StatsTimeRange;
+    totals: {
+      distinctSongsPlayed: number;
+      totalListens: number;
+      /** all-time scalar (range-independent — labeled so in the UI). */
+      fullListens: number;
+      /** all-time scalar. */
+      skips: number;
+      approxListeningTimeSec: number;
+      favorites: number;
+    };
+    /** 12 month buckets (last12Months/allTime) or 30 day buckets (last30Days). */
+    activity: { label: string; listens: number }[];
+    topSongs: StatsSongEntry[];
+    topArtists: StatsNameEntry[];
+    topAlbums: StatsNameEntry[];
+    topGenres: StatsNameEntry[];
+    mostSkipped: StatsSongEntry[];
+    elo: {
+      totalDuels: number;
+      topRated: (StatsSongEntry & {
+        rating: number;
+        games: number;
+        wins: number;
+        losses: number;
+      })[];
+      recentDuels: {
+        at: number;
+        titleA: string;
+        titleB: string;
+        winner: 'A' | 'B';
+        deltaA: number;
+        deltaB: number;
+      }[];
+    };
+  }
+
+  interface DuelSongEntry {
+    songId: string;
+    title: string;
+    artists: string[];
+    duration: number;
+    path: string;
+    artworkPaths: ArtworkPaths;
+    rating: number;
+    games: number;
+  }
+
+  interface DuelPair {
+    songA: DuelSongEntry;
+    songB: DuelSongEntry;
+  }
+
+  interface DuelResult {
+    deltaA: number;
+    deltaB: number;
+    ratingA: number;
+    ratingB: number;
+  }
+
+  type DuelInviteFrequency = 'off' | 'rare' | 'normal' | 'frequent';
+
+  interface DuelsLocalStorage {
+    frequency: DuelInviteFrequency;
+    /** ms timestamp of the last invite shown (0 = never). */
+    lastInviteAt: number;
+    /** listens registered since the last invite. */
+    listensSinceInvite: number;
+    /** earned duel prompts that have not been voted on or skipped yet. */
+    pendingDuels: number;
   }
 
   // ? Genre related types
@@ -1110,6 +1288,7 @@ declare global {
     | 'LyricsEditor'
     | 'Tierlists'
     | 'TierlistEditor'
+    | 'Stats'
     | 'AllSearchResults';
 
   type PromiseFunctionReturn = Promise<{ success: boolean; message?: string }>;
@@ -1171,7 +1350,8 @@ declare global {
     | 'tierlists'
     | 'tierlists/newTierlist'
     | 'tierlists/updatedTierlist'
-    | 'tierlists/deletedTierlist';
+    | 'tierlists/deletedTierlist'
+    | 'eloDuels';
 
   interface DataUpdateEvent {
     dataType: DataUpdateEventTypes;

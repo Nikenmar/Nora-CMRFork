@@ -388,8 +388,7 @@ const tierlistsData = {
   getTierlistData: (
     tierlistIds?: string[],
     sortType?: TierlistSortTypes
-  ): Promise<SavableTierlist[]> =>
-    ipcRenderer.invoke('app/getTierlistData', tierlistIds, sortType),
+  ): Promise<SavableTierlist[]> => ipcRenderer.invoke('app/getTierlistData', tierlistIds, sortType),
   addTierlist: (
     name: string,
     sourcePlaylistIds?: string[],
@@ -405,11 +404,27 @@ const tierlistsData = {
     ipcRenderer.invoke('app/removeTierlists', tierlistIds),
   getTierlistArtworks: (songIds: string[]): Promise<Record<string, string>> =>
     ipcRenderer.invoke('app/getTierlistArtworks', songIds),
-  getMegaShuffleWeights: (
-    songIds: string[],
-    intensity?: number
-  ): Promise<Record<string, number>> =>
+  getMegaShuffleWeights: (songIds: string[], intensity?: number): Promise<Record<string, number>> =>
     ipcRenderer.invoke('app/getMegaShuffleWeights', songIds, intensity)
+};
+
+// $ CMR STATS DATA (stats page + portable export/import)
+const statsData = {
+  getStatsData: (timeRange: StatsTimeRange): Promise<StatsData> =>
+    ipcRenderer.invoke('app/getStatsData', timeRange),
+  exportStatsData: (): Promise<{ success: boolean; message?: string }> =>
+    ipcRenderer.invoke('app/exportStatsData'),
+  importStatsData: (
+    mergeMode: StatsMergeMode,
+    source: StatsImportSource
+  ): Promise<StatsImportReport> => ipcRenderer.invoke('app/importStatsData', mergeMode, source)
+};
+
+// $ ELO DUELS (CMR)
+const eloDuels = {
+  getDuelPair: (): Promise<DuelPair | null> => ipcRenderer.invoke('app/getDuelPair'),
+  submitDuelResult: (songAId: string, songBId: string, winnerSongId: string): Promise<DuelResult> =>
+    ipcRenderer.invoke('app/submitDuelResult', songAId, songBId, winnerSongId)
 };
 
 // $ APP LOGS
@@ -518,6 +533,8 @@ export const api = {
   albumsData,
   playlistsData,
   tierlistsData,
+  statsData,
+  eloDuels,
   log,
   miniPlayer,
   settingsHelpers,

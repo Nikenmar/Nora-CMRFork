@@ -170,7 +170,8 @@ const MusicFoldersPage = () => {
             <div className="container flex">
               {t('foldersPage.musicFolders')}
               <div className="other-stats-container ml-12 flex items-center text-xs text-font-color-black dark:text-font-color-white">
-                {isMultipleSelectionEnabled ? (
+                {isMultipleSelectionEnabled &&
+                multipleSelectionsData.multipleSelections.length > 0 ? (
                   <div className="text-sm text-font-color-highlight dark:text-dark-font-color-highlight">
                     {t('common.selectionWithCount', {
                       count: multipleSelectionsData.multipleSelections.length

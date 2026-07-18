@@ -1,9 +1,10 @@
-import { memo, useCallback, useContext, useEffect, useMemo, useState } from 'react';
+import { Fragment, memo, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 import { AppUpdateContext } from '../../contexts/AppUpdateContext';
 import { useTranslation } from 'react-i18next';
 
 import ErrorBoundary from '../ErrorBoundary';
 import SideBarItem from './SideBarItem';
+import EloDuelDock from '../EloDuel/EloDuelDock';
 import { useStore } from '@tanstack/react-store';
 import { store } from '@renderer/store';
 
@@ -80,8 +81,15 @@ const Sidebar = memo(() => {
         isActive: false
       },
       {
+        id: 'Stats',
+        parentClassName: 'stats',
+        icon: 'monitoring',
+        content: t('sideBar.stats'),
+        isActive: false
+      },
+      {
         id: 'Settings',
-        parentClassName: 'settings',
+        parentClassName: 'settings !mt-0',
         icon: 'settings',
         content: t('settingsPage.settings'),
         isActive: false
@@ -136,15 +144,17 @@ const Sidebar = memo(() => {
     () =>
       data
         ? data.map((link) => (
-            <SideBarItem
-              key={link.id}
-              id={link.id}
-              parentClassName={link.parentClassName}
-              icon={link.icon}
-              content={link.content}
-              handleClick={clickHandler}
-              isActive={link.isActive}
-            />
+            <Fragment key={link.id}>
+              {link.id === 'Settings' && <EloDuelDock />}
+              <SideBarItem
+                id={link.id}
+                parentClassName={link.parentClassName}
+                icon={link.icon}
+                content={link.content}
+                handleClick={clickHandler}
+                isActive={link.isActive}
+              />
+            </Fragment>
           ))
         : [],
     [data, clickHandler]

@@ -175,7 +175,6 @@ const SongCard = (props: SongCardProp) => {
         label: t('common.play'),
         handlerFunction: () => {
           handlePlayBtnClick();
-          toggleMultipleSelections(false);
         },
         iconName: 'play_arrow',
         isDisabled: isMultipleSelectionsEnabled
@@ -184,7 +183,6 @@ const SongCard = (props: SongCardProp) => {
         label: t('common.createAQueue'),
         handlerFunction: () => {
           createQueue(songIds, 'songs', false, undefined, true);
-          toggleMultipleSelections(false);
         },
         iconName: 'queue_music',
         isDisabled: !isMultipleSelectionsEnabled
@@ -251,7 +249,6 @@ const SongCard = (props: SongCardProp) => {
               }
             ]);
           }
-          toggleMultipleSelections(false);
         }
       },
       {
@@ -281,7 +278,6 @@ const SongCard = (props: SongCardProp) => {
               }
             ]);
           }
-          toggleMultipleSelections(false);
         }
       },
       {
@@ -315,7 +311,6 @@ const SongCard = (props: SongCardProp) => {
               return undefined;
             })
             .catch((err) => console.error(err));
-          toggleMultipleSelections(false);
         }
       },
       {
@@ -329,7 +324,6 @@ const SongCard = (props: SongCardProp) => {
               title={title}
             />
           );
-          toggleMultipleSelections(false);
         }
       },
       {

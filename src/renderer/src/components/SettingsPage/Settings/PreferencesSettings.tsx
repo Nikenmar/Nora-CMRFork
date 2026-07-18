@@ -1,12 +1,22 @@
 import { useTranslation } from 'react-i18next';
 import storage from '../../../utils/localStorage';
 import Checkbox from '../../Checkbox';
+import Dropdown, { type DropdownOption } from '../../Dropdown';
+import i18n from '../../../i18n';
 import { useStore } from '@tanstack/react-store';
 import { store } from '@renderer/store';
+
+const duelFrequencyOptions: DropdownOption<DuelInviteFrequency>[] = [
+  { label: i18n.t('eloDuels.frequency_off'), value: 'off' },
+  { label: i18n.t('eloDuels.frequency_rare'), value: 'rare' },
+  { label: i18n.t('eloDuels.frequency_normal'), value: 'normal' },
+  { label: i18n.t('eloDuels.frequency_frequent'), value: 'frequent' }
+];
 
 const PreferencesSettings = () => {
   const userData = useStore(store, (state) => state.userData);
   const preferences = useStore(store, (state) => state.localStorage.preferences);
+  const duels = useStore(store, (state) => state.localStorage.duels);
   const { t } = useTranslation();
 
   return (
@@ -98,6 +108,27 @@ const PreferencesSettings = () => {
                 storage.preferences.setPreferences('shuffleArtworkFromSongCovers', state)
               }
               labelContent={t('settingsPage.shuffleArtworkFromSongCovers')}
+            />
+          </div>
+        </li>
+
+        <li className="duel-invites-frequency mb-4">
+          <div className="secondary-container">
+            <label htmlFor="duelInvitesFrequency" className="font-medium">
+              {t('eloDuels.settingsLabel')}
+            </label>
+            <div className="description">{t('eloDuels.settingsDescription')}</div>
+            <Dropdown
+              className="mt-4"
+              name="duelInvitesFrequency"
+              value={duels?.frequency ?? 'normal'}
+              options={duelFrequencyOptions}
+              onChange={(e) =>
+                storage.duels.setDuelsData(
+                  'frequency',
+                  e.currentTarget.value as DuelInviteFrequency
+                )
+              }
             />
           </div>
         </li>

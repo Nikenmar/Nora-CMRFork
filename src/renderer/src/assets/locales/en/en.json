@@ -29,6 +29,7 @@
 
     "selectionWithCount_one": "{{count}} selected",
     "selectionWithCount_other": "{{count}} selected",
+    "clearSelection": "Clear selection",
 
     "shownWithCount": "{{count}} shown",
 
@@ -729,7 +730,8 @@
   "sideBar": {
     "home": "Home",
     "search": "Search",
-    "tierlists": "Tierlists"
+    "tierlists": "Tierlists",
+    "stats": "Stats"
   },
 
   "tierlistsPage": {
@@ -772,6 +774,83 @@
     "goToArtist": "Go to artist",
     "removeFromTierlist": "Remove from tierlist",
     "deleteFromSystem": "Delete from system"
+  },
+
+  "statsPage": {
+    "title": "Stats",
+    "timeRange_allTime": "All time",
+    "timeRange_last12Months": "Last 12 months",
+    "timeRange_last30Days": "Last 30 days",
+    "totalListens": "Listens",
+    "fullListens": "Full listens (all time)",
+    "skips": "Skips (all time)",
+    "approxListeningTime": "Time listened",
+    "songsPlayed": "Songs played",
+    "favorites": "Favorites",
+    "listeningActivity": "Listening activity",
+    "topSongs": "Top songs",
+    "topArtists": "Top artists",
+    "topAlbums": "Top albums",
+    "topGenres": "Top genres",
+    "mostSkipped": "Most skipped",
+    "exportStats": "Export stats",
+    "importStats": "Import stats",
+    "empty": "No listening data yet. Play some music and your stats will show up here.",
+    "exportSuccess": "Stats exported successfully.",
+    "exportFailed": "Failed to export stats."
+  },
+
+  "statsImport": {
+    "title": "Import stats",
+    "pickFile": "Import stats file",
+    "pickFolder": "Import from a \"Nora exports\" folder",
+    "mergeModeSeparate": "Devices were used separately",
+    "mergeModeSeparateHint": "Add the numbers together.",
+    "mergeModeSameOrigin": "This data originally came from this PC",
+    "mergeModeSameOriginHint": "Take the maximum, don't double-count.",
+    "import": "Import",
+    "importing": "Importing…",
+    "reportMatched": "Matched songs: {{count}}",
+    "reportUnmatched": "Unmatched songs: {{count}}",
+    "reportMerged": "Updated entries: {{count}}",
+    "reportElo": "ELO ratings merged.",
+    "reportBackup": "Backup saved to: {{path}}",
+    "alreadyImportedWarning": "This export was already imported. Importing it again in \"separate devices\" mode would double every number. You can re-import it in \"same origin\" mode instead.",
+    "importAsSameOrigin": "Import as same origin",
+    "failed": "Failed to import stats."
+  },
+
+  "eloDuels": {
+    "sectionTitle": "ELO Duels",
+    "totalDuels": "Total duels",
+    "topRated": "Top rated",
+    "recentDuels": "Recent duels",
+    "close": "Close",
+    "inviteText_one": "A duel is ready. Pick which song you like more.",
+    "inviteText_other": "{{count}} duels are ready. Want to clear the backlog?",
+    "duelButton_one": "Start duel",
+    "duelButton_other": "Start {{count}} duels",
+    "promptTitle": "Which one do you like more?",
+    "preview": "Preview",
+    "skipDuel": "Skip — can't decide",
+    "nextDuel": "Next duel",
+    "queuedRemaining_one": "{{count}} duel remaining",
+    "queuedRemaining_other": "{{count}} duels remaining",
+    "batchComplete": "Batch complete",
+    "minimize": "Minimize duel",
+    "dockName": "Duel",
+    "maximize_one": "Open {{count}} queued ELO duel",
+    "maximize_other": "Open {{count}} queued ELO duels",
+    "resumeDuel": "Resume ELO duel",
+    "ratingWithGames_one": "{{rating}} · {{count}} game",
+    "ratingWithGames_other": "{{rating}} · {{count}} games",
+    "settingsLabel": "Automatic duel queue",
+    "settingsDescription": "How often Nora adds a duel to your queue while you listen. You can always start one manually from the Duel button.",
+    "startDuel": "Start a duel",
+    "frequency_off": "Off",
+    "frequency_rare": "Rare",
+    "frequency_normal": "Normal",
+    "frequency_frequent": "Frequent"
   },
 
   "renamePlaylistPrompt": {

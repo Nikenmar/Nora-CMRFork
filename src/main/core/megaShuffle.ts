@@ -1,4 +1,10 @@
-import { getListeningData, getPlaylistData, getSongsData, getTierlistData } from '../filesystem';
+import {
+  getCmrStatsData,
+  getListeningData,
+  getPlaylistData,
+  getSongsData,
+  getTierlistData
+} from '../filesystem';
 import logger from '../logger';
 
 // How hard the most-recently-played track is pushed back (its weight ×0.4),
@@ -19,9 +25,15 @@ const FRESHNESS_PENALTY = 0.6;
  *    tracks are ranked (sum of tier values), plus how much they're listened to.
  *    Computed across the WHOLE library, so a track that ISN'T in any tierlist
  *    still gets lifted purely because it's by one of your top artists.
+ *  - eloScore — ELO duel rating, min-max normalized across rated songs. Only
+ *    active once totalDuels >= 10 (below that the signal is noise); unrated
+ *    songs get a NEUTRAL 0.5 — absence of duels must not punish a song
+ *    (unlike tiers, where unranked = 0 is intentional).
  *  - listening — full-listens, a lighter nudge.
  *
- * weight = 0.4 + 0.6·score → the requested 60% smart / 40% pure-random.
+ * score = 0.5·tier + 0.4·artist + 0.1·listening           (no ELO data yet)
+ *       = 0.45·tier + 0.35·artist + 0.1·elo + 0.1·listening  (ELO active)
+ * weight = (1 - intensity) + intensity·score, then a freshness penalty.
  */
 
 const tierValue = (index: number, total: number) => {
@@ -102,6 +114,25 @@ const getMegaShuffleWeights = (songIds: string[] = [], intensity = 0.6): Record<
       artistAffinity[key] = 0.75 * normTier + 0.25 * normListen;
     }
 
+    // ----- ELO score (4th signal; only once enough duels exist to be meaningful) -----
+    const elo = getCmrStatsData().elo;
+    const hasEloData = elo.totalDuels >= 10;
+    let eloMin = 0;
+    let eloMax = 0;
+    if (hasEloData) {
+      const ratedRatings = Object.values(elo.ratings)
+        .filter((r) => r.games >= 1)
+        .map((r) => r.rating);
+      eloMin = Math.min(...ratedRatings);
+      eloMax = Math.max(...ratedRatings);
+    }
+    const eloScore = (songId: string) => {
+      const rating = elo.ratings[songId];
+      // unrated => neutral 0.5; degenerate range (all equal) => 0.5 for everyone.
+      if (!rating || rating.games < 1 || eloMax <= eloMin) return 0.5;
+      return (rating.rating - eloMin) / (eloMax - eloMin);
+    };
+
     // ----- weight for each requested song -----
     for (const songId of targetIds) {
       const song = songById.get(songId);
@@ -114,8 +145,11 @@ const getMegaShuffleWeights = (songIds: string[] = [], intensity = 0.6): Record<
       const lScore = maxSongListen > 0 ? (listenMap[songId] || 0) / maxSongListen : 0;
 
       // Tier value leads, artist affinity is strong (surfaces unranked tracks by
-      // top artists), listening is a light touch.
-      const score = 0.5 * tScore + 0.4 * aScore + 0.1 * lScore; // 0..1
+      // top artists), ELO nudges once dueling history exists, listening is a
+      // light touch. Without enough duels the legacy formula stays bit-exact.
+      const score = hasEloData
+        ? 0.45 * tScore + 0.35 * aScore + 0.1 * eloScore(songId) + 0.1 * lScore // 0..1
+        : 0.5 * tScore + 0.4 * aScore + 0.1 * lScore; // 0..1
       // weight = (1-blend) + blend·score, then a freshness penalty. blend (0..1)
       // is the user's intensity: 0.6 = 60/40, 1 = fully smart, 0 = pure random.
       // Floored so a 0-weight never breaks the renderer's random^(1/w) sampling.

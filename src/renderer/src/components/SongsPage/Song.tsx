@@ -245,7 +245,6 @@ const Song = forwardRef((props: SongProp, ref: ForwardedRef<HTMLDivElement>) => 
         label: t('common.play'),
         handlerFunction: () => {
           handlePlayBtnClick();
-          toggleMultipleSelections(false);
         },
         iconName: 'play_arrow',
         isDisabled: isMultipleSelectionsEnabled
@@ -254,7 +253,6 @@ const Song = forwardRef((props: SongProp, ref: ForwardedRef<HTMLDivElement>) => 
         label: t('common.createAQueue'),
         handlerFunction: () => {
           createQueue(songIds, 'songs', false, undefined, true);
-          toggleMultipleSelections(false);
         },
         iconName: 'queue_music',
         isDisabled: !isMultipleSelectionsEnabled
@@ -317,7 +315,6 @@ const Song = forwardRef((props: SongProp, ref: ForwardedRef<HTMLDivElement>) => 
               }
             ]);
           }
-          toggleMultipleSelections(false);
         }
       },
       {
@@ -353,7 +350,6 @@ const Song = forwardRef((props: SongProp, ref: ForwardedRef<HTMLDivElement>) => 
               }
             ]);
           }
-          toggleMultipleSelections(false);
         }
       },
       {
@@ -378,7 +374,6 @@ const Song = forwardRef((props: SongProp, ref: ForwardedRef<HTMLDivElement>) => 
               return undefined;
             })
             .catch((err) => console.error(err));
-          toggleMultipleSelections(false);
         }
       },
       {
@@ -392,7 +387,6 @@ const Song = forwardRef((props: SongProp, ref: ForwardedRef<HTMLDivElement>) => 
               title={title}
             />
           );
-          toggleMultipleSelections(false);
         }
       },
       {

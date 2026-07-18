@@ -137,7 +137,6 @@ const CurrentlyPlayingSongInfoContainer = () => {
             true,
             <AddSongsToPlaylistsPrompt songIds={[songId]} title={title} />
           );
-          toggleMultipleSelections(false);
         }
       },
       {

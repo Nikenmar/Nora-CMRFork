@@ -15,7 +15,8 @@ import {
   setBlacklist,
   saveListeningData,
   saveUserData,
-  setPaletteData
+  setPaletteData,
+  setCmrStatsData
 } from '../filesystem';
 
 const requiredItemsForImport = [
@@ -28,7 +29,12 @@ const requiredItemsForImport = [
   'song_covers'
 ];
 
-const optionalItemsForImport = ['localStorageData.json', 'blacklist.json', 'listening_data.json'];
+const optionalItemsForImport = [
+  'localStorageData.json',
+  'blacklist.json',
+  'listening_data.json',
+  'cmr_stats.json'
+];
 
 const DEFAULT_EXPORT_DIALOG_OPTIONS: OpenDialogOptions = {
   title: `Select a Destination where you saved Nora's Exported App Data`,
@@ -116,6 +122,15 @@ const importOptionalData = async (
       });
       const blacklistData: Blacklist = JSON.parse(blacklistDataString).blacklists;
       setBlacklist(blacklistData);
+    }
+
+    // CMR STATS DATA
+    if (entries.includes('cmr_stats.json')) {
+      const cmrStatsDataString = await fs.readFile(path.join(importDir, 'cmr_stats.json'), {
+        encoding: 'utf-8'
+      });
+      const cmrStatsData: CmrStatsData = JSON.parse(cmrStatsDataString).cmrStats;
+      setCmrStatsData(cmrStatsData);
     }
 
     // LOCAL STORAGE DATA

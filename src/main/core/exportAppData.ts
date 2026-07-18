@@ -11,7 +11,8 @@ import {
   getSongsData,
   getBlacklistData,
   getUserData,
-  getPaletteData
+  getPaletteData,
+  getCmrStatsData
 } from '../filesystem';
 import { sendMessageToRenderer, showOpenDialog } from '../main';
 import logger from '../logger';
@@ -88,6 +89,11 @@ const exportAppData = async (localStorageData: string) => {
     {
       filename: 'listening_data.json',
       dataString: JSON.stringify({ listeningData: getListeningData() })
+    },
+    // CMR STATS DATA (ELO duels and stats import history)
+    {
+      filename: 'cmr_stats.json',
+      dataString: JSON.stringify({ cmrStats: getCmrStatsData() })
     },
     // LOCAL STORAGE DATA
     {

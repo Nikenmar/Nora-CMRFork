@@ -419,7 +419,9 @@ const ArtistInfoPage = () => {
                   : 'text-font-color-black dark:text-font-color-white'
               } mb-4 mt-1 text-2xl`}
               otherItems={[
-                isMultipleSelectionEnabled && multipleSelectionsData.selectionType === 'album' ? (
+                isMultipleSelectionEnabled &&
+                multipleSelectionsData.selectionType === 'album' &&
+                multipleSelectionsData.multipleSelections.length > 0 ? (
                   <p className="text-sm text-font-color-highlight dark:text-dark-font-color-highlight">
                     {t('common.selectionWithCount', {
                       count: multipleSelectionsData.multipleSelections.length
@@ -475,7 +477,9 @@ const ArtistInfoPage = () => {
               } mb-4 mt-1 pr-4 text-2xl`}
               otherItems={[
                 <p className="text-sm text-font-color-highlight dark:text-dark-font-color-highlight">
-                  {isMultipleSelectionEnabled && multipleSelectionsData.selectionType === 'songs'
+                  {isMultipleSelectionEnabled &&
+                  multipleSelectionsData.selectionType === 'songs' &&
+                  multipleSelectionsData.multipleSelections.length > 0
                     ? t('common.selectionWithCount', {
                         count: multipleSelectionsData.multipleSelections.length
                       })

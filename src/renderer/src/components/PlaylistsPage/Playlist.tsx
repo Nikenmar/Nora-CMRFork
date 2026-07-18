@@ -174,7 +174,6 @@ export const Playlist = (props: PlaylistProp) => {
         handlerFunction: () => {
           if (isMultipleSelectionEnabled) playAllSongsForMultipleSelections();
           else playAllSongs();
-          toggleMultipleSelections(false);
         }
       },
       {
@@ -185,7 +184,6 @@ export const Playlist = (props: PlaylistProp) => {
         handlerFunction: () => {
           if (isMultipleSelectionEnabled) playAllSongsForMultipleSelections(true);
           else playAllSongs(true);
-          toggleMultipleSelections(false);
         }
       },
       {
@@ -206,7 +204,6 @@ export const Playlist = (props: PlaylistProp) => {
               }
             ]);
           }
-          toggleMultipleSelections(false);
         }
       },
       {
