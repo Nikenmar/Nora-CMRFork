@@ -130,7 +130,7 @@ const OtherSongControlsContainer = () => {
         clickHandler={() => toggleMutedState(!isMuted)}
       />
 
-      <div className="volume-slider-container mr-4 min-w-[4rem] max-w-[6rem] lg:mr-4">
+      <div className="volume-slider-container mr-4 min-w-[9rem] max-w-[12rem] lg:mr-4">
         <VolumeSlider name="player-volume-slider" id="volumeSlider" />
       </div>
       <div className="other-settings-btn mr-4 flex cursor-pointer items-center justify-center text-font-color-black text-opacity-60 dark:text-font-color-white">

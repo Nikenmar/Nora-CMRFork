@@ -372,6 +372,9 @@
     "showRemainingSongDurationDescription": "Shows the remaining duration of the song instead of the default song duration.",
     "playbackRate": "Playback speed",
     "changePlaybackRate": "Change the default playback speed of the player.",
+    "tierShuffleIntensityDescription": "How strongly Smart Shuffle leans on your tierlists & top artists. Higher = more curated, lower = closer to plain random.",
+    "tierShuffleSmart": "smart",
+    "tierShuffleRandom": "random",
     "resetPlaybackRate": "Reset to 1x",
     "seekbarScrollInterval": "Change the increment amount when scrolled over audio seek bar and volume seek bar.",
     "second": "second",
@@ -739,7 +742,9 @@
     "tierlistName": "Tierlist name",
     "tierlistNameEmpty": "Tierlist name cannot be empty.",
     "selectSourcePlaylists": "Image pool source playlists",
-    "noSourcePlaylists": "Select at least one playlist to pull tracks from.",
+    "selectSources": "Image pool sources",
+    "folders": "Folders",
+    "noSourcePlaylists": "Select at least one playlist or folder to pull tracks from.",
     "create": "Create",
     "createSuccess": "Tierlist created successfully.",
     "deleteTierlist": "Delete tierlist",
@@ -764,7 +769,9 @@
     "hidePlayButton": "Hide play button",
     "influencesShuffleOn": "Influences Smart Shuffle",
     "influencesShuffleOff": "Not influencing shuffle",
-    "goToArtist": "Go to artist"
+    "goToArtist": "Go to artist",
+    "removeFromTierlist": "Remove from tierlist",
+    "deleteFromSystem": "Delete from system"
   },
 
   "renamePlaylistPrompt": {

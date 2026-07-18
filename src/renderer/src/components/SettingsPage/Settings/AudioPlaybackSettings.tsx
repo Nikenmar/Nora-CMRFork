@@ -30,13 +30,20 @@ const AudioPlaybackSettings = () => {
 
   const [playbackRateInterval, setPlaybackRateInterval] = useState(1);
 
+  const [tierShuffleIntensity, setTierShuffleIntensity] = useState(0.6);
+
   useEffect(() => {
     const interval = storage.preferences.getPreferences('seekbarScrollInterval');
     const playbackRate = storage.playback.getPlaybackOptions('playbackRate');
 
     setPlaybackRateInterval(playbackRate);
     setSeekbarScrollInterval(interval.toString());
+    setTierShuffleIntensity(storage.preferences.getPreferences('tierShuffleIntensity') ?? 0.6);
   }, []);
+
+  const tierShuffleCssProperties = {
+    '--seek-before-width': `${Math.round(tierShuffleIntensity * 100)}%`
+  } as CSSProperties;
 
   const playbackRateSeekBarCssProperties: CSSProperties = {};
 
@@ -63,6 +70,38 @@ const AudioPlaybackSettings = () => {
             }
             labelContent={t('settingsPage.showRemainingSongDuration')}
           />
+        </li>
+
+        <li className="tier-shuffle-intensity mb-6">
+          <div className="description">{t('settingsPage.tierShuffleIntensityDescription')}</div>
+          <div className="mt-6 flex items-center">
+            <div className="flex w-1/2 min-w-[120px] flex-col items-center justify-center">
+              <span className="text-font-color-highlight dark:text-dark-font-color-highlight">
+                {Math.round(tierShuffleIntensity * 100)}% {t('settingsPage.tierShuffleSmart')} /{' '}
+                {100 - Math.round(tierShuffleIntensity * 100)}%{' '}
+                {t('settingsPage.tierShuffleRandom')}
+              </span>
+              <div className="flex w-full items-center pl-2">
+                <span className="text-sm">0</span>
+                <input
+                  type="range"
+                  className="seek-bar-slider thumb-visible relative float-left mx-4 h-6 w-full appearance-none bg-[transparent] p-0 outline-none outline-1 outline-offset-1 before:absolute before:left-0 before:top-1/2 before:h-1 before:w-[var(--seek-before-width)] before:-translate-y-1/2 before:cursor-pointer before:rounded-3xl before:bg-font-color-highlight before:transition-[width,background] before:content-[''] focus-visible:!outline dark:before:bg-font-color-highlight dark:hover:before:bg-dark-font-color-highlight"
+                  min={0}
+                  step={0.05}
+                  max={1}
+                  value={tierShuffleIntensity}
+                  onChange={(e) => {
+                    const val = e.currentTarget.valueAsNumber;
+                    setTierShuffleIntensity(val);
+                    storage.preferences.setPreferences('tierShuffleIntensity', val);
+                  }}
+                  style={tierShuffleCssProperties}
+                  title={`${Math.round(tierShuffleIntensity * 100)}% smart`}
+                />
+                <span className="text-sm">100</span>
+              </div>
+            </div>
+          </div>
         </li>
 
         <li className="playback-rate mb-6" id="playbackRateInterval">

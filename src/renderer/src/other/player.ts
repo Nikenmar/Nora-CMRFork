@@ -122,7 +122,14 @@ class AudioPlayer extends Audio {
   }
 
   private updatePlayerVolume(volume: PlayerVolume) {
-    this.volume = volume.value / 100;
+    // Slider value stays 0-100 (linear UI); apply a perceptual dB "audio taper" so
+    // loudness changes evenly to the ear (like the Windows volume mixer) instead of
+    // the near-inaudible top half a raw linear gain (value/100) produces.
+    // Normalized exponential curve: continuous, maps 0->0 and 1->1, ~30 dB range
+    // (50% ≈ -16 dB) — a perceptual taper that stays comfortably loud in the mid range.
+    const DYNAMIC_RANGE = Math.log(30); // ~30 dB of usable range
+    const v = Math.min(Math.max(volume.value / 100, 0), 1);
+    this.volume = v <= 0 ? 0 : (Math.exp(DYNAMIC_RANGE * v) - 1) / (Math.exp(DYNAMIC_RANGE) - 1);
     this.muted = volume.isMuted;
   }
 

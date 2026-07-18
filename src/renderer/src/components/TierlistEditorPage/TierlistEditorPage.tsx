@@ -24,6 +24,9 @@ const EditTierlistSourcesPrompt = lazy(() => import('./EditTierlistSourcesPrompt
 const ConfirmDeleteTierlistPrompt = lazy(
   () => import('../TierlistsPage/ConfirmDeleteTierlistPrompt')
 );
+const DeleteSongsFromSystemConfrimPrompt = lazy(
+  () => import('../SongsPage/DeleteSongsFromSystemConfrimPrompt')
+);
 
 const POOL_ID = 'pool';
 
@@ -45,7 +48,8 @@ const sameIds = (a: Item[], b: Item[]) =>
 const seedBoard = (
   tierlist: SavableTierlist,
   liveSongIds: string[],
-  songMap: Record<string, SongData>
+  songMap: Record<string, SongData>,
+  remap: Record<string, string> = {}
 ): Board => {
   const isVisible = (id: string) => !!songMap[id];
   const placed = new Set<string>();
@@ -53,12 +57,16 @@ const seedBoard = (
 
   for (const tier of tierlist.tiers) {
     const seen = new Set<string>();
-    const ids = tier.items.filter((id) => {
-      if (!isVisible(id) || seen.has(id) || placed.has(id)) return false;
-      seen.add(id);
-      placed.add(id);
-      return true;
-    });
+    // Map each placed song to its canonical (folder-authoritative) id first, so a
+    // ranking made via a playlist migrates onto the folder's duplicate cleanly.
+    const ids = tier.items
+      .map((id) => remap[id] ?? id)
+      .filter((id) => {
+        if (!isVisible(id) || seen.has(id) || placed.has(id)) return false;
+        seen.add(id);
+        placed.add(id);
+        return true;
+      });
     tiers[tier.tierId] = ids.map((id) => ({ id }));
   }
 
@@ -76,7 +84,8 @@ const incrementalBoard = (
   prev: Board,
   tierlist: SavableTierlist,
   liveSongIds: string[],
-  songMap: Record<string, SongData>
+  songMap: Record<string, SongData>,
+  remap: Record<string, string> = {}
 ): Board => {
   const isVisible = (id: string) => !!songMap[id];
   const liveVisible = new Set(liveSongIds.filter(isVisible));
@@ -84,10 +93,15 @@ const incrementalBoard = (
   const tiers: Record<string, Item[]> = {};
 
   for (const tier of tierlist.tiers) {
+    const seen = new Set<string>();
     const prevItems = (prev.tiers[tier.tierId] ?? [])
-      .map((i) => i.id)
-      .filter((id) => liveVisible.has(id) && !placed.has(id));
-    prevItems.forEach((id) => placed.add(id));
+      .map((i) => remap[i.id] ?? i.id) // a newly-added folder may dup a placed song
+      .filter((id) => {
+        if (!liveVisible.has(id) || placed.has(id) || seen.has(id)) return false;
+        seen.add(id);
+        placed.add(id);
+        return true;
+      });
     tiers[tier.tierId] = prevItems.map((id) => ({ id }));
   }
 
@@ -112,13 +126,19 @@ const TierlistEditorPage = () => {
     changePromptMenuData,
     addNewNotifications,
     playSong,
+    createQueue,
+    toggleSongPlayback,
     updateContextMenuData
   } = useContext(AppUpdateContext);
+  const currentSongId = useStore(store, (state) => state.currentSongData.songId);
+  const isCurrentSongPlaying = useStore(store, (state) => state.player.isCurrentSongPlaying);
   const { t } = useTranslation();
 
   const [tierlist, setTierlist] = useState<SavableTierlist | null>(null);
   const [songMap, setSongMap] = useState<Record<string, SongData>>({});
   const [liveSongIds, setLiveSongIds] = useState<string[]>([]);
+  // Dedup remap: a duplicate song's id -> the canonical (folder-authoritative) id.
+  const [remap, setRemap] = useState<Record<string, string>>({});
   const [board, setBoard] = useState<Board>({ pool: [], tiers: {} });
   // Cached 200px thumbnails per songId (cheap to decode; full-res would lag).
   const [thumbMap, setThumbMap] = useState<Record<string, string>>({});
@@ -202,6 +222,32 @@ const TierlistEditorPage = () => {
     (e: ReactMouseEvent<HTMLDivElement>, songId: string) => {
       const song = songMapRef.current[songId];
       const artists = song?.artists || [];
+      const tl = tierlistRef.current;
+
+      // Is this track pulled in by a source FOLDER? If so it can't simply be
+      // "removed" (the folder re-adds it) — the only way out is deleting the file.
+      const inFolder = !!(
+        song?.path && (tl?.sourceFolderPaths || []).some((fp) => fp && song.path.includes(fp))
+      );
+
+      const removeItem: ContextMenuItem = inFolder
+        ? {
+            label: t('tierlistsPage.deleteFromSystem'),
+            iconName: 'delete_forever',
+            class: '!text-font-color-crimson',
+            handlerFunction: () =>
+              changePromptMenuData(true, <DeleteSongsFromSystemConfrimPrompt songIds={[songId]} />)
+          }
+        : {
+            label: t('tierlistsPage.removeFromTierlist'),
+            iconName: 'playlist_remove',
+            handlerFunction: () => {
+              const ids = tl?.sourcePlaylistIds || [];
+              Promise.all(
+                ids.map((pid) => window.api.playlistsData.removeSongFromPlaylist(pid, songId))
+              ).catch((err) => console.error(err));
+            }
+          };
 
       const goToArtist = (name: string, id: string) =>
         changeCurrentActivePage('ArtistInfo', { artistName: name, artistId: id });
@@ -236,11 +282,13 @@ const TierlistEditorPage = () => {
           iconName: 'info',
           handlerFunction: () => changeCurrentActivePage('SongInfo', { songId })
         },
-        ...(artistItem ? [artistItem] : [])
+        ...(artistItem ? [artistItem] : []),
+        { label: 'Hr', isContextMenuItemSeperator: true, handlerFunction: () => true },
+        removeItem
       ];
       updateContextMenuData(true, items, e.pageX, e.pageY);
     },
-    [playSong, changeCurrentActivePage, updateContextMenuData, t]
+    [playSong, changeCurrentActivePage, changePromptMenuData, updateContextMenuData, t]
   );
 
   // ? Persist (debounced) — single source of truth for writing to disk.
@@ -271,54 +319,91 @@ const TierlistEditorPage = () => {
       .catch((err) => console.error(err));
   }, [tierlistId]);
 
-  // ? Derive the live image pool from the source playlists, in real time.
-  const sourceKey = (tierlist?.sourcePlaylistIds || []).join(',');
+  // ? Derive the live image pool from the source playlists AND folders, live.
+  const sourceKey = [
+    ...(tierlist?.sourcePlaylistIds || []),
+    '|F|',
+    ...(tierlist?.sourceFolderPaths || [])
+  ].join(',');
   const fetchPoolSource = useCallback(() => {
     const tl = tierlistRef.current;
-    // Critical: do nothing until the tierlist itself has loaded. Otherwise the
-    // very first render (tierlist still null) would see no sources, flip
-    // poolLoaded=true prematurely, and the reconcile would seed against an empty
-    // song map — dumping every saved placement into the pool.
+    // Critical: do nothing until the tierlist itself has loaded.
     if (!tl) return;
-    const ids = tl.sourcePlaylistIds || [];
-    if (ids.length === 0) {
+    const playlistIds = tl.sourcePlaylistIds || [];
+    const folderPaths = tl.sourceFolderPaths || [];
+    if (playlistIds.length === 0 && folderPaths.length === 0) {
       setLiveSongIds([]);
       setSongMap({});
+      setRemap({});
       setPoolLoaded(true);
       return;
     }
-    window.api.playlistsData
-      .getPlaylistData(ids)
-      .then((playlists) => {
-        const union: string[] = [];
+
+    let orderedIds: string[] = [];
+    Promise.all([
+      playlistIds.length
+        ? window.api.playlistsData.getPlaylistData(playlistIds)
+        : Promise.resolve([] as Playlist[]),
+      folderPaths.length
+        ? window.api.folderData.getFolderData(folderPaths)
+        : Promise.resolve([] as MusicFolder[])
+    ])
+      .then(([playlists, folders]) => {
+        // Folders are the authoritative source: collect their songs first so a
+        // duplicate keeps the folder's id. (A folder's songIds already include
+        // sub-folders, matched by path.)
         const seen = new Set<string>();
-        for (const playlist of playlists || []) {
-          for (const songId of playlist.songs) {
-            if (!seen.has(songId)) {
-              seen.add(songId);
-              union.push(songId);
-            }
+        const ordered: string[] = [];
+        const add = (id: string) => {
+          if (!seen.has(id)) {
+            seen.add(id);
+            ordered.push(id);
           }
-        }
-        setLiveSongIds(union);
-        if (union.length === 0) {
-          setSongMap({});
-          return undefined;
-        }
-        return window.api.audioLibraryControls.getSongInfo(
-          union,
-          undefined,
-          undefined,
-          undefined,
-          true
-        );
+        };
+        for (const folder of folders || []) for (const id of folder.songIds || []) add(id);
+        for (const playlist of playlists || []) for (const id of playlist.songs) add(id);
+        orderedIds = ordered;
+        return ordered.length
+          ? window.api.audioLibraryControls.getSongInfo(
+              ordered,
+              undefined,
+              undefined,
+              undefined,
+              true
+            )
+          : [];
       })
       .then((songs) => {
-        if (songs) {
-          const map: Record<string, SongData> = {};
-          for (const song of songs) map[song.songId] = song;
-          setSongMap(map);
+        const ordered = orderedIds;
+        const map: Record<string, SongData> = {};
+        for (const song of songs || []) map[song.songId] = song;
+
+        // ----- smart dedup by track key; folder-sourced id wins (it comes first) -----
+        const norm = (s?: string) => (s || '').normalize('NFC').trim().toLowerCase();
+        const keyOf = (s?: SongData) =>
+          s
+            ? `${norm(s.title)}|${(s.artists || [])
+                .map((a) => norm(a.name))
+                .sort()
+                .join(',')}`
+            : '';
+        const canonicalByKey: Record<string, string> = {};
+        const remapObj: Record<string, string> = {};
+        const canonicalIds: string[] = [];
+        for (const id of ordered) {
+          const song = map[id];
+          const key = keyOf(song);
+          if (key && canonicalByKey[key]) {
+            remapObj[id] = canonicalByKey[key]; // duplicate -> keep the first (folder) id
+          } else {
+            if (key) canonicalByKey[key] = id;
+            canonicalIds.push(id);
+          }
         }
+
+        setSongMap(map);
+        setRemap(remapObj);
+        setLiveSongIds(canonicalIds);
         setPoolLoaded(true);
       })
       .catch((err) => console.error(err));
@@ -373,12 +458,12 @@ const TierlistEditorPage = () => {
       // StrictMode double-invoke of updaters can't corrupt them. Seed is applied
       // as a plain value, which React does not double-invoke.
       seededRef.current = true;
-      setBoard(seedBoard(tl, liveSongIds, songMap));
+      setBoard(seedBoard(tl, liveSongIds, songMap, remap));
     } else {
       // Pure updater (no ref mutation, stable branch) — safe under StrictMode.
-      setBoard((prev) => incrementalBoard(prev, tl, liveSongIds, songMap));
+      setBoard((prev) => incrementalBoard(prev, tl, liveSongIds, songMap, remap));
     }
-  }, [structureKey, liveSongIds, songMap, poolLoaded]);
+  }, [structureKey, liveSongIds, songMap, poolLoaded, remap]);
 
   // ? Flush any pending debounced save on unmount so quickly navigating away
   // ? right after a drag never loses the placement.
@@ -501,7 +586,28 @@ const TierlistEditorPage = () => {
     persist({ ...tl, influencesShuffle: !tl.influencesShuffle });
   }, [persist]);
 
-  const handlePlay = useCallback((songId: string) => playSong(songId), [playSong]);
+  // Play a track FROM the tierlist: build a queue from the whole tierlist (tiers
+  // top-to-bottom, then the pool) so next/prev/shuffle/Smart-Shuffle all operate
+  // within it — the tierlist acts like a hidden playlist. Clicking the currently
+  // playing track just toggles play/pause.
+  const handlePlay = useCallback(
+    (songId: string) => {
+      if (songId === store.state.currentSongData.songId) {
+        toggleSongPlayback();
+        return;
+      }
+      const tl = tierlistRef.current;
+      const b = boardRef.current;
+      const queueIds = [
+        ...(tl?.tiers || []).flatMap((tier) => (b.tiers[tier.tierId] ?? []).map((i) => i.id)),
+        ...b.pool.map((i) => i.id)
+      ];
+      // Omit isShuffleQueue so it respects the current shuffle / Smart Shuffle state.
+      createQueue(queueIds, 'songs', undefined, undefined, false);
+      playSong(songId, true);
+    },
+    [createQueue, playSong, toggleSongPlayback]
+  );
 
   const exportAsImage = useCallback(async () => {
     if (!exportRef.current) return;
@@ -674,6 +780,13 @@ const TierlistEditorPage = () => {
                       thumbSrc={thumbMap[item.id]}
                       labelMode={tierlist.labelMode}
                       showPlayButton={showPlayButton}
+                      playState={
+                        item.id === currentSongId
+                          ? isCurrentSongPlaying
+                            ? 'playing'
+                            : 'paused'
+                          : 'none'
+                      }
                       onPlay={handlePlay}
                       onCardContextMenu={openCardMenu}
                     />
@@ -716,6 +829,13 @@ const TierlistEditorPage = () => {
                   thumbSrc={thumbMap[item.id]}
                   labelMode={tierlist.labelMode}
                   showPlayButton={showPlayButton}
+                  playState={
+                    item.id === currentSongId
+                      ? isCurrentSongPlaying
+                        ? 'playing'
+                        : 'paused'
+                      : 'none'
+                  }
                   onPlay={handlePlay}
                   onCardContextMenu={openCardMenu}
                 />

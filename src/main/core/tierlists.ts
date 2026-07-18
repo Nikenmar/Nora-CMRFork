@@ -41,7 +41,8 @@ export const sendTierlistData = (
 export const addTierlist = (
   name: string,
   sourcePlaylistIds: string[] = [],
-  labelMode: TierlistLabelMode = 'track'
+  labelMode: TierlistLabelMode = 'track',
+  sourceFolderPaths: string[] = []
 ): { success: boolean; message?: string; tierlist?: SavableTierlist } => {
   try {
     const trimmedName = name.trim();
@@ -58,6 +59,7 @@ export const addTierlist = (
       name: trimmedName,
       createdDate: new Date(),
       sourcePlaylistIds: Array.isArray(sourcePlaylistIds) ? sourcePlaylistIds : [],
+      sourceFolderPaths: Array.isArray(sourceFolderPaths) ? sourceFolderPaths : [],
       tiers: createDefaultTiers(),
       labelMode
     };

@@ -393,9 +393,10 @@ const tierlistsData = {
   addTierlist: (
     name: string,
     sourcePlaylistIds?: string[],
-    labelMode?: TierlistLabelMode
+    labelMode?: TierlistLabelMode,
+    sourceFolderPaths?: string[]
   ): Promise<{ success: boolean; message?: string; tierlist?: SavableTierlist }> =>
-    ipcRenderer.invoke('app/addTierlist', name, sourcePlaylistIds, labelMode),
+    ipcRenderer.invoke('app/addTierlist', name, sourcePlaylistIds, labelMode, sourceFolderPaths),
   saveTierlist: (
     updatedTierlist: SavableTierlist
   ): Promise<{ success: boolean; message?: string }> =>
@@ -404,8 +405,11 @@ const tierlistsData = {
     ipcRenderer.invoke('app/removeTierlists', tierlistIds),
   getTierlistArtworks: (songIds: string[]): Promise<Record<string, string>> =>
     ipcRenderer.invoke('app/getTierlistArtworks', songIds),
-  getMegaShuffleWeights: (songIds: string[]): Promise<Record<string, number>> =>
-    ipcRenderer.invoke('app/getMegaShuffleWeights', songIds)
+  getMegaShuffleWeights: (
+    songIds: string[],
+    intensity?: number
+  ): Promise<Record<string, number>> =>
+    ipcRenderer.invoke('app/getMegaShuffleWeights', songIds, intensity)
 };
 
 // $ APP LOGS

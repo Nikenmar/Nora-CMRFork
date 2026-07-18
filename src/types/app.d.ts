@@ -518,6 +518,8 @@ declare global {
     enableImageBasedDynamicThemes: boolean;
     autoTranslateLyrics: boolean;
     autoConvertLyrics: boolean;
+    /** Smart Shuffle intensity, 0..1 (0 = pure random, 0.6 = default 60/40, 1 = fully smart). */
+    tierShuffleIntensity?: number;
   }
 
   interface CurrentSong {
@@ -533,6 +535,7 @@ declare global {
 
   interface Playback {
     isShuffling: boolean;
+    isTierShuffling?: boolean;
     isRepeating: RepeatTypes;
     currentSong: CurrentSong;
     volume: Volume;
@@ -681,6 +684,9 @@ declare global {
     createdDate: Date;
     /** Playlists whose songs make up the live image pool. */
     sourcePlaylistIds: string[];
+    /** Music folders whose songs feed the pool. More authoritative than playlists
+     * for dedup: a track present in both keeps the folder's songId. */
+    sourceFolderPaths?: string[];
     /** Ordered tier rows, each holding its placed songIds. */
     tiers: TierRow[];
     labelMode: TierlistLabelMode;

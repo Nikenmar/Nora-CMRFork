@@ -352,8 +352,13 @@ export function initializeIPC(mainWindow: BrowserWindow, abortSignal: AbortSigna
 
     ipcMain.handle(
       'app/addTierlist',
-      (_, name: string, sourcePlaylistIds?: string[], labelMode?: TierlistLabelMode) =>
-        addTierlist(name, sourcePlaylistIds, labelMode)
+      (
+        _,
+        name: string,
+        sourcePlaylistIds?: string[],
+        labelMode?: TierlistLabelMode,
+        sourceFolderPaths?: string[]
+      ) => addTierlist(name, sourcePlaylistIds, labelMode, sourceFolderPaths)
     );
 
     ipcMain.handle('app/saveTierlist', (_, updatedTierlist: SavableTierlist) =>
@@ -368,8 +373,8 @@ export function initializeIPC(mainWindow: BrowserWindow, abortSignal: AbortSigna
       getTierlistArtworks(songIds)
     );
 
-    ipcMain.handle('app/getMegaShuffleWeights', (_, songIds: string[]) =>
-      getMegaShuffleWeights(songIds)
+    ipcMain.handle('app/getMegaShuffleWeights', (_, songIds: string[], intensity?: number) =>
+      getMegaShuffleWeights(songIds, intensity)
     );
 
     ipcMain.handle('app/addSongsToPlaylist', (_, playlistId: string, songIds: string[]) =>

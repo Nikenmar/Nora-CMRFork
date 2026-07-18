@@ -15,19 +15,25 @@ const NewTierlistPrompt = () => {
 
   const [name, setName] = useState('');
   const [playlists, setPlaylists] = useState<Playlist[]>([]);
+  const [folders, setFolders] = useState<MusicFolder[]>([]);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const [selectedFolders, setSelectedFolders] = useState<string[]>([]);
 
   useEffect(() => {
     window.api.playlistsData
       .getPlaylistData([], 'aToZ')
       .then((res) => setPlaylists(Array.isArray(res) ? res : []))
       .catch((err) => console.error(err));
+    window.api.folderData
+      .getFolderData([], 'aToZ')
+      .then((res) => setFolders(Array.isArray(res) ? res : []))
+      .catch((err) => console.error(err));
   }, []);
 
+  const toggle = (arr: string[], v: string) =>
+    arr.includes(v) ? arr.filter((x) => x !== v) : [...arr, v];
   const toggleSelection = (playlistId: string) =>
-    setSelectedIds((prev) =>
-      prev.includes(playlistId) ? prev.filter((id) => id !== playlistId) : [...prev, playlistId]
-    );
+    setSelectedIds((prev) => toggle(prev, playlistId));
 
   const createTierlist = () => {
     const trimmed = name.trim();
@@ -40,7 +46,7 @@ const NewTierlistPrompt = () => {
         }
       ]);
     }
-    if (selectedIds.length === 0) {
+    if (selectedIds.length === 0 && selectedFolders.length === 0) {
       return addNewNotifications([
         {
           id: 'noSourcePlaylists',
@@ -51,7 +57,7 @@ const NewTierlistPrompt = () => {
     }
 
     return window.api.tierlistsData
-      .addTierlist(trimmed, selectedIds, 'track')
+      .addTierlist(trimmed, selectedIds, 'track', selectedFolders)
       .then((res) => {
         if (res?.success && res.tierlist) {
           changePromptMenuData(false);
@@ -92,6 +98,43 @@ const NewTierlistPrompt = () => {
         }}
         autoFocus
       />
+
+      {folders.length > 0 && (
+        <>
+          <span className="mb-2 text-center text-sm font-medium uppercase tracking-wide opacity-70">
+            {t('tierlistsPage.folders')}
+          </span>
+          <div className="folders-picker mb-5 flex w-full flex-wrap justify-center gap-3 px-1 py-1">
+            {folders.map((folder) => {
+              const isSelected = selectedFolders.includes(folder.path);
+              const fname = folder.path.split(/[\\/]/).pop() || folder.path;
+              return (
+                <button
+                  type="button"
+                  key={folder.path}
+                  title={folder.path}
+                  onClick={() => setSelectedFolders((p) => toggle(p, folder.path))}
+                  className={`flex h-16 w-56 items-center gap-3 rounded-xl px-3 text-left transition-[outline,background] ${
+                    isSelected
+                      ? 'bg-font-color-highlight/20 outline outline-2 outline-font-color-highlight dark:bg-dark-font-color-highlight/20 dark:outline-dark-font-color-highlight'
+                      : 'bg-background-color-2/60 outline-1 hover:outline dark:bg-dark-background-color-2/60'
+                  }`}
+                >
+                  <span className="material-icons-round-outlined shrink-0 text-2xl opacity-80">
+                    folder
+                  </span>
+                  <span className="truncate text-sm font-medium">{fname}</span>
+                  {isSelected && (
+                    <span className="material-icons-round ml-auto text-base text-font-color-highlight dark:text-dark-font-color-highlight">
+                      check_circle
+                    </span>
+                  )}
+                </button>
+              );
+            })}
+          </div>
+        </>
+      )}
 
       <span className="mb-3 text-center text-sm font-medium uppercase tracking-wide opacity-70">
         {t('tierlistsPage.selectSourcePlaylists')}

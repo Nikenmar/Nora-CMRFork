@@ -42,6 +42,8 @@ interface TierItemCardProps extends HTMLAttributes<HTMLDivElement> {
   onCardContextMenu?: (_e: ReactMouseEvent<HTMLDivElement>, _songId: string) => void;
   /** Cached 200px thumbnail; falls back to the tiny optimized cover until ready. */
   thumbSrc?: string;
+  /** 'playing'/'paused' when this card is the current track, else 'none'. */
+  playState?: 'none' | 'playing' | 'paused';
 }
 
 // Plain presentational card (SortableJS owns the drag behaviour). 96px wide with
@@ -55,6 +57,7 @@ const TierItemCard = forwardRef<HTMLDivElement, TierItemCardProps>(
       onPlay,
       onCardContextMenu,
       thumbSrc,
+      playState = 'none',
       className = '',
       ...rest
     },
@@ -63,6 +66,7 @@ const TierItemCard = forwardRef<HTMLDivElement, TierItemCardProps>(
     const { t } = useTranslation();
 
     if (!song) return <div ref={ref} {...rest} className={className} />;
+    const isCurrent = playState !== 'none';
 
     const caption = getCaption(song, labelMode, t('tierlistsPage.unknownArtist'));
     // Use the cheap medium thumbnail (200px). Until it's generated, show the tiny
@@ -78,7 +82,11 @@ const TierItemCard = forwardRef<HTMLDivElement, TierItemCardProps>(
           onCardContextMenu?.(e, song.songId);
         }}
         title={caption}
-        className={`tier-item group/item relative flex w-24 shrink-0 cursor-grab flex-col overflow-hidden rounded-lg border border-black/10 bg-background-color-1 shadow-[0_2px_8px_rgba(0,0,0,0.28)] transition-shadow [contain-intrinsic-size:96px_138px] [content-visibility:auto] hover:shadow-[0_4px_14px_rgba(0,0,0,0.4)] dark:border-white/10 dark:bg-dark-background-color-1 ${className}`}
+        className={`tier-item group/item relative flex w-24 shrink-0 cursor-grab flex-col overflow-hidden rounded-lg border bg-background-color-1 shadow-[0_2px_8px_rgba(0,0,0,0.28)] transition-shadow [contain-intrinsic-size:96px_138px] [content-visibility:auto] hover:shadow-[0_4px_14px_rgba(0,0,0,0.4)] dark:bg-dark-background-color-1 ${
+          isCurrent
+            ? 'border-font-color-highlight ring-1 ring-font-color-highlight dark:border-dark-font-color-highlight dark:ring-dark-font-color-highlight'
+            : 'border-black/10 dark:border-white/10'
+        } ${className}`}
       >
         <Img
           src={artwork}
@@ -88,18 +96,24 @@ const TierItemCard = forwardRef<HTMLDivElement, TierItemCardProps>(
           enableImgFadeIns={false}
           className="block aspect-square w-full object-cover [image-rendering:high-quality]"
         />
-        {showPlayButton && (
+        {(showPlayButton || isCurrent) && (
           <button
             type="button"
             // .tier-play-btn is excluded from SortableJS dragging via `filter`.
-            className="tier-play-btn invisible absolute right-1 top-1 flex items-center justify-center leading-none text-font-color-white opacity-0 drop-shadow-[0_1px_4px_rgba(0,0,0,0.85)] transition-[opacity,color,transform] hover:scale-110 hover:text-font-color-highlight group-hover/item:visible group-hover/item:opacity-100"
+            className={`tier-play-btn absolute right-1 top-1 flex items-center justify-center leading-none drop-shadow-[0_1px_4px_rgba(0,0,0,0.85)] transition-[opacity,color,transform] hover:scale-110 hover:text-font-color-highlight ${
+              isCurrent
+                ? 'visible text-font-color-highlight opacity-100 dark:text-dark-font-color-highlight'
+                : 'invisible text-font-color-white opacity-0 group-hover/item:visible group-hover/item:opacity-100'
+            }`}
             title={t('tierlistsPage.playTrack')}
             onClick={(e) => {
               e.stopPropagation();
               onPlay?.(song.songId);
             }}
           >
-            <span className="material-icons-round text-2xl leading-none">play_circle</span>
+            <span className="material-icons-round text-2xl leading-none">
+              {playState === 'playing' ? 'pause_circle' : 'play_circle'}
+            </span>
           </button>
         )}
         <span

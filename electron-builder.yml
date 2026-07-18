@@ -112,6 +112,12 @@ linux:
 
 npmRebuild: true
 
+publish:
+  provider: github
+  owner: Nikenmar
+  repo: Nora-CMRFork
+  releaseType: release
+
 protocols:
   name: nora-protocol
   schemes:

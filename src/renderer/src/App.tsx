@@ -208,6 +208,7 @@ export default function App() {
     storage.playback.setCurrentSongOptions('stoppedPosition', player.currentTime);
     storage.playback.setPlaybackOptions('isRepeating', store.state.player.isRepeating);
     storage.playback.setPlaybackOptions('isShuffling', store.state.player.isShuffling);
+    storage.playback.setPlaybackOptions('isTierShuffling', store.state.player.isTierShuffling);
   }, []);
 
   const updateAppUpdatesState = useCallback((state: AppUpdatesState) => {
@@ -457,6 +458,21 @@ export default function App() {
 
     toggleShuffling(playback?.isShuffling);
     toggleRepeat(playback?.isRepeating);
+
+    // Restore Smart Shuffle: only set the flag and warm the weight cache. The
+    // saved queue is already in its smart order, so we do NOT reshuffle here —
+    // that's what made the earlier attempt behave backwards after a restart.
+    if (playback?.isTierShuffling) {
+      dispatch({ type: 'TOGGLE_TIER_SHUFFLE_STATE', data: true });
+      const intensity = preferences?.tierShuffleIntensity ?? 0.6;
+      window.api.tierlistsData
+        .getMegaShuffleWeights([], intensity)
+        .then((w) => {
+          tierShuffleWeightsRef.current = w || {};
+          return undefined;
+        })
+        .catch((err) => console.error(err));
+    }
 
     window.api.audioLibraryControls
       .checkForStartUpSongs()
@@ -1181,8 +1197,18 @@ export default function App() {
     dispatch({ type: 'TOGGLE_SHUFFLE_STATE', data: isShuffling });
   }, []);
 
+  // Cached per-song weights for the Smart Shuffle, so building a fresh queue can
+  // be weighted synchronously (just like the normal shuffle) — fixes the "play a
+  // track and it goes linear" bug. Warmed whenever Smart Shuffle turns on.
+  const tierShuffleWeightsRef = useRef<Record<string, number>>({});
+
   const shuffleQueue = useCallback(
     (songIds: string[], currentSongIndex?: number) => {
+      // If Smart Shuffle is on, weight the order instead of pure random. Don't
+      // flip the normal-shuffle flag here — the two modes are exclusive.
+      if (store.state.player.isTierShuffling) {
+        return megaShuffleQueue(songIds, tierShuffleWeightsRef.current, currentSongIndex);
+      }
       toggleShuffling(true);
       return shuffleQueueRandomly(songIds, currentSongIndex);
     },
@@ -1193,7 +1219,7 @@ export default function App() {
     (
       newQueue: string[],
       queueType: QueueTypes,
-      isShuffleQueue = store.state.player.isShuffling,
+      isShuffleQueue = store.state.player.isShuffling || store.state.player.isTierShuffling,
       queueId?: string,
       startPlaying = false
     ) => {
@@ -1210,7 +1236,13 @@ export default function App() {
 
         if (positions.length > 0) queue.queueBeforeShuffle = positions;
         queue.currentSongIndex = 0;
-      } else toggleShuffling(false);
+      } else {
+        // A non-shuffled queue was requested: turn BOTH shuffle modes off so Smart
+        // Shuffle behaves exactly like the normal one (no "lit button, linear queue").
+        toggleShuffling(false);
+        if (store.state.player.isTierShuffling)
+          dispatch({ type: 'TOGGLE_TIER_SHUFFLE_STATE', data: false });
+      }
 
       storage.queue.setQueue(queue);
       if (startPlaying) changeQueueCurrentSongIndex(0);
@@ -1268,10 +1300,13 @@ export default function App() {
             ]);
             return null;
           }
-          return window.api.tierlistsData.getMegaShuffleWeights(baseQueue);
+          const intensity = storage.preferences.getPreferences('tierShuffleIntensity') ?? 0.6;
+          // Weights for the WHOLE library, so later queue rebuilds stay smart too.
+          return window.api.tierlistsData.getMegaShuffleWeights([], intensity);
         })
         .then((weights) => {
           if (!weights) return; // aborted (no influencing tierlists)
+          tierShuffleWeightsRef.current = weights;
           const { shuffledQueue, positions } = megaShuffleQueue(
             baseQueue,
             weights,
@@ -1341,7 +1376,13 @@ export default function App() {
         queue.queue = shuffledQueue;
         if (positions.length > 0) queue.queueBeforeShuffle = positions;
         queue.currentSongIndex = 0;
-      } else toggleShuffling(false);
+      } else {
+        // A non-shuffled queue was requested: turn BOTH shuffle modes off so Smart
+        // Shuffle behaves exactly like the normal one (no "lit button, linear queue").
+        toggleShuffling(false);
+        if (store.state.player.isTierShuffling)
+          dispatch({ type: 'TOGGLE_TIER_SHUFFLE_STATE', data: false });
+      }
 
       storage.queue.setQueue(queue);
       if (playCurrentSongIndex && typeof currentSongIndex === 'number')

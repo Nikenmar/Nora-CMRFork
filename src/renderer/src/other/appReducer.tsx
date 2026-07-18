@@ -290,6 +290,13 @@ export const reducer = (state: AppReducer, action: AppReducerStateActions): AppR
         player: {
           ...state.player,
           isTierShuffling
+        },
+        localStorage: {
+          ...state.localStorage,
+          playback: {
+            ...state.localStorage.playback,
+            isTierShuffling
+          }
         }
       };
     }
@@ -425,7 +432,8 @@ export const LOCAL_STORAGE_DEFAULT_TEMPLATE: LocalStorage = {
     enableImageBasedDynamicThemes: false,
     doNotShowHelpPageOnLyricsEditorStartUp: false,
     autoTranslateLyrics: false,
-    autoConvertLyrics: false
+    autoConvertLyrics: false,
+    tierShuffleIntensity: 0.6
   },
   playback: {
     currentSong: {
@@ -434,6 +442,7 @@ export const LOCAL_STORAGE_DEFAULT_TEMPLATE: LocalStorage = {
     },
     isRepeating: 'false',
     isShuffling: false,
+    isTierShuffling: false,
     volume: {
       isMuted: false,
       value: 50

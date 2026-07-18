@@ -65,8 +65,16 @@ It's about **60% smart / 40% random** - leans, doesn't rig. Only tier lists you 
 
 ---
 
+## Volume that actually sounds smooth
+
+The stock volume slider is **linear** - it just sets the audio gain to `value / 100`. Problem is, your ears aren't linear, they hear loudness on a logarithmic (decibel) scale. So on the old slider almost all the audible change was crammed into the bottom, and the top half sounded basically the same. It felt like the volume jumped in chunks instead of gliding.
+
+Now it uses a proper **perceptual (dB) curve**, the same kind of taper the Windows volume mixer uses, so loudness rises evenly across the whole slider. The number is still 0-100; only how it maps to real gain changed (50% now sits around -16 dB instead of a flat half). The slider is also wider, so you can actually land on the value you want.
+
+---
+
 ## Credits
 
 Built on [Nora](https://github.com/Sandakan/Nora) by [Sandakan](https://github.com/Sandakan).
 
-Built for my own daily use. Auto-updates are off on purpose so upstream releases don't overwrite these changes.
+Built for my own daily use. Auto-updates pull from this fork's own GitHub releases, not upstream, so they only ever ship my changes.

@@ -30,13 +30,17 @@ const tierValue = (index: number, total: number) => {
   return linear ** 1.4; // mild curve so the top tiers clearly stand out
 };
 
-const getMegaShuffleWeights = (songIds: string[]): Record<string, number> => {
+const getMegaShuffleWeights = (songIds: string[] = [], intensity = 0.6): Record<string, number> => {
   const weights: Record<string, number> = {};
   try {
-    if (!Array.isArray(songIds) || songIds.length === 0) return weights;
-
     const songs = getSongsData();
+    if (!Array.isArray(songs) || songs.length === 0) return weights;
     const songById = new Map(songs.map((s) => [s.songId, s]));
+    // Empty songIds => compute weights for the WHOLE library (used to warm the
+    // renderer's cache so shuffling a freshly-built queue stays instant & smart).
+    const targetIds =
+      Array.isArray(songIds) && songIds.length > 0 ? songIds : songs.map((s) => s.songId);
+    const blend = Math.min(1, Math.max(0, intensity)); // 0 = pure random, 1 = fully smart
     const influencing = getTierlistData().filter((t) => t.influencesShuffle);
 
     // ----- song tier scores (best placement across influencing tierlists) -----
@@ -99,7 +103,7 @@ const getMegaShuffleWeights = (songIds: string[]): Record<string, number> => {
     }
 
     // ----- weight for each requested song -----
-    for (const songId of songIds) {
+    for (const songId of targetIds) {
       const song = songById.get(songId);
       const tScore = songTier[songId] || 0;
       let aScore = 0;
@@ -112,8 +116,11 @@ const getMegaShuffleWeights = (songIds: string[]): Record<string, number> => {
       // Tier value leads, artist affinity is strong (surfaces unranked tracks by
       // top artists), listening is a light touch.
       const score = 0.5 * tScore + 0.4 * aScore + 0.1 * lScore; // 0..1
-      // 60% smart / 40% base, then a freshness penalty for recently-played songs.
-      weights[songId] = (0.4 + 0.6 * score) * freshnessFactor(songId);
+      // weight = (1-blend) + blend·score, then a freshness penalty. blend (0..1)
+      // is the user's intensity: 0.6 = 60/40, 1 = fully smart, 0 = pure random.
+      // Floored so a 0-weight never breaks the renderer's random^(1/w) sampling.
+      const w = Math.max(0.001, 1 - blend + blend * score);
+      weights[songId] = w * freshnessFactor(songId);
     }
 
     logger.debug('Computed Mega Smart Shuffle weights.', {
