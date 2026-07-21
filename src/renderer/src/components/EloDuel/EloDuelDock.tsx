@@ -4,6 +4,7 @@ import { useStore } from '@tanstack/react-store';
 import { createPortal } from 'react-dom';
 
 import { store } from '@renderer/store';
+import { peekFirstAliveDuelPair } from '../../utils/duelQueue';
 import EloDuelPrompt from './EloDuelPrompt';
 
 const EloDuelDock = () => {
@@ -34,8 +35,9 @@ const EloDuelDock = () => {
 
     loadingRef.current = true;
     setIsLoading(true);
-    return window.api.eloDuels
-      .getDuelPair()
+    // Earned (queued) duels first; a fresh random pair only when the backlog is empty.
+    return peekFirstAliveDuelPair()
+      .then((queuedPair) => queuedPair ?? window.api.eloDuels.getDuelPair())
       .then((pair) => {
         if (pair) {
           setActivePair(pair);

@@ -2,8 +2,7 @@ import { useEffect } from 'react';
 
 import { store } from '@renderer/store';
 import storage from '../utils/localStorage';
-
-const MAX_PENDING_DUELS = 100;
+import { getDuelQueue, MAX_PENDING_DUELS, setDuelQueue } from '../utils/duelQueue';
 
 const DUEL_INVITE_THRESHOLDS: Record<
   Exclude<DuelInviteFrequency, 'off'>,
@@ -15,18 +14,29 @@ const DUEL_INVITE_THRESHOLDS: Record<
 };
 
 /**
- * Earns a persistent ELO duel after enough finished listens. The dedicated
- * ELO dock surfaces the backlog without competing with transient notifications.
+ * Earns a persistent ELO duel after enough finished listens. The earned pair is
+ * generated IMMEDIATELY, pins the just-finished track as side A and is pushed
+ * onto a persisted FIFO backlog (the dock consumes it pair by pair). The
+ * dedicated ELO dock surfaces the backlog without competing with transient
+ * notifications.
  */
 const useDuelInvite = () => {
   useEffect(() => {
+    // One-time reconciliation: the legacy counter predates the pair queue, so
+    // old installs may show a backlog count with no pairs behind it.
+    const startupQueue = getDuelQueue();
+    if ((storage.duels.getDuelsData('pendingDuels') ?? 0) !== startupQueue.length)
+      storage.duels.setDuelsData('pendingDuels', startupQueue.length);
+
     const manageListenEvents = (e: Event) => {
       if (!('detail' in e)) return;
       const dataEvents = (e as DetailAvailableEvent<DataUpdateEvent[]>).detail;
-      const hasNewListen = dataEvents.some(
+      const listenEvent = dataEvents.find(
         (event) => event.dataType === 'songs/listeningData/listens'
       );
-      if (!hasNewListen) return;
+      if (!listenEvent) return;
+      // The event carries the songId of the listen that triggered it.
+      const listenedSongId = listenEvent.eventData[0]?.data?.[0];
 
       const state = store.state;
       const duels = state.localStorage.duels;
@@ -47,12 +57,9 @@ const useDuelInvite = () => {
         return;
       }
 
-      const pendingDuels = Math.max(0, duels.pendingDuels ?? 0);
-      if (pendingDuels >= MAX_PENDING_DUELS) {
+      if (getDuelQueue().length >= MAX_PENDING_DUELS) {
         storage.duels.setDuelsData('lastInviteAt', now);
         storage.duels.setDuelsData('listensSinceInvite', 0);
-        if (pendingDuels > MAX_PENDING_DUELS)
-          storage.duels.setDuelsData('pendingDuels', MAX_PENDING_DUELS);
         return;
       }
 
@@ -63,16 +70,14 @@ const useDuelInvite = () => {
       if (state.multipleSelectionsData.isEnabled) return;
 
       window.api.eloDuels
-        .getDuelPair()
+        .getDuelPair(listenedSongId)
         .then((pair) => {
           if (!pair) return undefined;
-          const currentPendingDuels = Math.max(0, store.state.localStorage.duels.pendingDuels ?? 0);
+          const queue = getDuelQueue();
+          if (queue.length >= MAX_PENDING_DUELS) return undefined;
+          setDuelQueue([...queue, [pair.songA.songId, pair.songB.songId]]);
           storage.duels.setDuelsData('lastInviteAt', now);
           storage.duels.setDuelsData('listensSinceInvite', 0);
-          storage.duels.setDuelsData(
-            'pendingDuels',
-            Math.min(MAX_PENDING_DUELS, currentPendingDuels + 1)
-          );
           return undefined;
         })
         .catch((err) => console.error(err));

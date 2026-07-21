@@ -4,7 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { AppUpdateContext } from '../../contexts/AppUpdateContext';
 import { store } from '@renderer/store';
 import { getPerceptualGain } from '../../other/player';
-import storage from '../../utils/localStorage';
+import { getDuelQueue, peekFirstAliveDuelPair, setDuelQueue } from '../../utils/duelQueue';
 
 import Button from '../Button';
 import DuelCard from './DuelCard';
@@ -109,15 +109,17 @@ const EloDuelPrompt = (props: EloDuelPromptProps) => {
   }, [onMinimize, stopPreview]);
 
   const consumeQueuedDuel = useCallback(() => {
-    if (remainingQueuedDuelsRef.current === 0) return;
-
-    const remaining = Math.max(0, remainingQueuedDuelsRef.current - 1);
-    remainingQueuedDuelsRef.current = remaining;
-    setRemainingQueuedDuels(remaining);
-
-    const persistedPendingDuels = storage.duels.getDuelsData('pendingDuels') ?? 0;
-    storage.duels.setDuelsData('pendingDuels', Math.max(0, persistedPendingDuels - 1));
-  }, []);
+    const queue = getDuelQueue();
+    if (queue.length === 0) return;
+    const [songAId, songBId] = queue[0];
+    // Only consume when the CURRENT pair is the queued one — a manual duel
+    // played while the backlog grew must not eat someone else's pair.
+    if (songAId !== pair.songA.songId || songBId !== pair.songB.songId) return;
+    const nextQueue = queue.slice(1);
+    setDuelQueue(nextQueue);
+    remainingQueuedDuelsRef.current = nextQueue.length;
+    setRemainingQueuedDuels(nextQueue.length);
+  }, [pair.songA.songId, pair.songB.songId]);
 
   const fetchNextPair = useCallback(
     (fallbackPhase: DuelPhase) => {
@@ -126,8 +128,9 @@ const EloDuelPrompt = (props: EloDuelPromptProps) => {
       // Keep the completed result visible while loading the next pair. Hiding
       // it first changes the centered dialog's height and causes a visible flash.
       if (fallbackPhase !== 'result') setPhase('submitting');
-      window.api.eloDuels
-        .getDuelPair()
+      // Next earned pair from the backlog first; fresh random pair when it's empty.
+      peekFirstAliveDuelPair()
+        .then((queuedPair) => queuedPair ?? window.api.eloDuels.getDuelPair())
         .then((nextPair) => {
           if (nextPair) {
             setPair(nextPair);

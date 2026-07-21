@@ -1,7 +1,13 @@
 import fs from 'fs/promises';
 import path from 'path';
 
-import { getCmrStatsData, getListeningData, getSongsData } from '../../filesystem';
+import {
+  getCmrStatsData,
+  getListeningData,
+  getPlaylistData,
+  getSongsData,
+  getTierlistData
+} from '../../filesystem';
 import { showSaveDialog } from '../../main';
 import { generateRandomId } from '../../utils/randomId';
 import logger from '../../logger';
@@ -9,7 +15,12 @@ import { version } from '../../../../package.json';
 
 const EXPORT_FORMAT = 'nora-cmr-stats-export' as const;
 
-const exportStatsData = async (): Promise<{ success: boolean; message?: string }> => {
+/** App-managed playlist ids — never exported (Favorites = likes, History is derived). */
+const EXCLUDED_PLAYLIST_IDS = new Set(['Favorites', 'History']);
+
+const exportStatsData = async (options?: {
+  tierShuffleIntensity?: number;
+}): Promise<{ success: boolean; message?: string }> => {
   try {
     const destination = await showSaveDialog({
       title: 'Export Stats',
@@ -23,11 +34,36 @@ const exportStatsData = async (): Promise<{ success: boolean; message?: string }
     const songs = getSongsData();
     const songById = new Map(songs.map((song) => [song.songId, song]));
 
+    // User playlists only — Favorites/History are app-managed and stay local.
+    const playlists: ExportedPlaylist[] = getPlaylistData()
+      .filter((playlist) => !EXCLUDED_PLAYLIST_IDS.has(playlist.playlistId))
+      .map((playlist) => ({
+        playlistId: playlist.playlistId,
+        name: playlist.name,
+        songs: playlist.songs,
+        createdDate: playlist.createdDate
+      }));
+
+    const tierlists = getTierlistData();
+
     // Fingerprints are how the importing device recognizes songs — songIds are
-    // random per install and mean nothing across devices.
+    // random per install and mean nothing across devices. The union covers
+    // listening data, playlist tracks and tierlist placements, so songs that
+    // were never listened to still travel with the export.
+    const referencedSongIds = new Set<string>();
+    for (const entry of listeningData) referencedSongIds.add(entry.songId);
+    for (const playlist of playlists) {
+      for (const songId of playlist.songs) referencedSongIds.add(songId);
+    }
+    for (const tierlist of tierlists) {
+      for (const tier of tierlist.tiers ?? []) {
+        for (const songId of tier.items ?? []) referencedSongIds.add(songId);
+      }
+    }
+
     const fingerprints: SongFingerprint[] = [];
-    for (const entry of listeningData) {
-      const song = songById.get(entry.songId);
+    for (const songId of referencedSongIds) {
+      const song = songById.get(songId);
       if (!song) continue;
       fingerprints.push({
         songId: song.songId,
@@ -40,6 +76,12 @@ const exportStatsData = async (): Promise<{ success: boolean; message?: string }
 
     const elo = getCmrStatsData().elo;
 
+    const tierShuffleIntensity = options?.tierShuffleIntensity;
+    const preferences: StatsExportPreferences | undefined =
+      typeof tierShuffleIntensity === 'number' && Number.isFinite(tierShuffleIntensity)
+        ? { tierShuffleIntensity: Math.min(1, Math.max(0, tierShuffleIntensity)) }
+        : undefined;
+
     const exportFile: StatsExportFile = {
       format: EXPORT_FORMAT,
       formatVersion: 1,
@@ -48,12 +90,20 @@ const exportStatsData = async (): Promise<{ success: boolean; message?: string }
       appVersion: version,
       songs: fingerprints,
       listeningData,
-      ...(elo.totalDuels > 0 ? { elo } : {})
+      ...(elo.totalDuels > 0 ? { elo } : {}),
+      ...(playlists.length > 0 ? { playlists } : {}),
+      ...(tierlists.length > 0 ? { tierlists } : {}),
+      ...(preferences ? { preferences } : {})
     };
 
     await fs.writeFile(destination, JSON.stringify(exportFile, null, 2), 'utf-8');
 
-    logger.info('Stats data exported successfully.', { destination, songs: fingerprints.length });
+    logger.info('Stats data exported successfully.', {
+      destination,
+      songs: fingerprints.length,
+      playlists: playlists.length,
+      tierlists: tierlists.length
+    });
     return { success: true };
   } catch (error) {
     // User closed the save dialog — not an error, stay silent.

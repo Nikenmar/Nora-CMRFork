@@ -77,17 +77,17 @@ Now it uses a proper **perceptual (dB) curve**, the same kind of taper the Windo
 
 A new **Stats** tab with your listening numbers: total listens, full listens, skips, approximate listening time, switchable all-time / last-12-month / last-30-day views, a monthly or daily activity graph, top songs / artists / albums / genres, most skipped, and your ELO standings.
 
-It also does **portable stats**. Export your listening history and ELO ratings to a JSON file and merge them into another library - or import a stock "Nora exports" folder from vanilla Nora, that works too. Song ids and folder paths can be different between installs, so the importer recognizes tracks by metadata fingerprints (file name, title + artists, duration) and merges day by day, never by raw ids or timestamps.
+It also does **portable stats** - and then some. One JSON file carries your listening history, ELO ratings, **playlists**, **tier lists** (rankings and shuffle influence included) and your **Smart Shuffle intensity**. Song ids and folder paths can be different between installs, so the importer recognizes tracks by metadata fingerprints (file name, title + artists, duration) and merges day by day, never by raw ids or timestamps.
 
 There are two merge modes: **add the numbers together** for devices used separately, or **take the maximum** when the data originally came from the same library so nothing gets double-counted. A backup of your current stats files is written before every import, malformed exports are rejected before anything is changed, and importing the same additive export twice won't duplicate it.
 
-The old app-data export in Settings is still there for a different job: it is a full backup / restore of the library, playlists, covers and settings. It now includes CMR stats and ELO too, while older "Nora exports" folders stay compatible.
+Playlists merge by name (missing songs get added, nothing is replaced). Tier lists import whole - a tier list whose folder sources don't exist on the new machine gets an "Imported: ..." fallback playlist built from its ranked tracks, so the board renders right away. A same-named tier list is skipped rather than merged. The old app-data export in Settings is gone - this one file is the way to move your setup between machines.
 
 ## ELO duels
 
 The **Duel** button above Settings is always there when you want it: two songs from your listening history side by side, pick the one you like more, and the next duel follows automatically. Standard ELO math - everyone starts at 1200, K=32. Cards have hover preview buttons that play a snippet of the song without touching your queue or the main player.
 
-Nora can also build up a small duel backlog as you listen. The frequency is configurable in Settings, the queue persists across restarts, and it is capped at 100. The duel window can be minimized without losing the current pair or the rest of the batch.
+Nora can also build up a small duel backlog as you listen: every earned duel is generated the moment you finish a track and that track is pinned as one of the contenders - so the backlog is always about the music you have actually been hearing lately. The frequency is configurable in Settings, the queue persists across restarts, and it is capped at 100. The duel window can be minimized without losing the current pair or the rest of the batch.
 
 Your top-rated songs and recent duels live on the Stats tab from the very first result. And once you've done ten or so duels, the Smart Shuffle starts using your ratings as a fourth signal - songs that have never dueled stay neutral, so not playing along never hurts a track.
 

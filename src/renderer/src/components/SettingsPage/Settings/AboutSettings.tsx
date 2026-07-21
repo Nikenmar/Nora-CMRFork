@@ -9,7 +9,6 @@ import Button from '../../Button';
 import AppStats from './AppStats';
 
 import calculateElapsedTime from '../../../utils/calculateElapsedTime';
-import storage from '../../../utils/localStorage';
 
 import { version, author, homepage, bugs, urls } from '../../../../../../package.json';
 import openSourceLicenses from '../../../../../../open_source_licenses.txt?raw';
@@ -336,46 +335,6 @@ const AboutSettings = () => {
                   }}
                 />
               );
-            }}
-          />
-
-          <Button
-            label={t('settingsPage.exportAppData')}
-            iconName="file_upload"
-            className="mb-4"
-            clickHandler={(_, setIsDisabled, setIsPending) => {
-              setIsDisabled(true);
-              setIsPending(true);
-
-              return window.api.settingsHelpers
-                .exportAppData(JSON.stringify(storage.getAllItems()))
-                .finally(() => {
-                  setIsDisabled(false);
-                  setIsPending(false);
-                })
-                .catch((err) => console.error(err));
-            }}
-          />
-
-          <Button
-            label={t('settingsPage.importAppData')}
-            iconName="publish"
-            className="!mr-0 mb-4"
-            clickHandler={(_, setIsDisabled, setIsPending) => {
-              setIsDisabled(true);
-              setIsPending(true);
-
-              return window.api.settingsHelpers
-                .importAppData()
-                .then((res) => {
-                  if (res) storage.setAllItems(res);
-                  return undefined;
-                })
-                .finally(() => {
-                  setIsDisabled(false);
-                  setIsPending(false);
-                })
-                .catch((err) => console.error(err));
             }}
           />
         </div>

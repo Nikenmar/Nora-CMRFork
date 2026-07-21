@@ -129,30 +129,6 @@ const MusicFoldersPage = () => {
     changePromptMenuData(true, <AddMusicFoldersPrompt onFailure={(err) => console.error(err)} />);
   }, [changePromptMenuData]);
 
-  const importAppData = useCallback(
-    (
-      _: unknown,
-      setIsDisabled: (state: boolean) => void,
-      setIsPending: (state: boolean) => void
-    ) => {
-      setIsDisabled(true);
-      setIsPending(true);
-
-      return window.api.settingsHelpers
-        .importAppData()
-        .then((res) => {
-          if (res) storage.setAllItems(res);
-          return undefined;
-        })
-        .finally(() => {
-          setIsDisabled(false);
-          setIsPending(false);
-        })
-        .catch((err) => console.error(err));
-    },
-    []
-  );
-
   return (
     <MainContainer
       className="music-folders-page appear-from-bottom relative !h-full !pb-0 !pr-4"
@@ -247,12 +223,6 @@ const MusicFoldersPage = () => {
                 pendingAnimationOnDisabled
                 iconClassName="material-icons-round-outlined"
                 clickHandler={addNewFolder}
-              />
-              <Button
-                label={t('settingsPage.importAppData')}
-                iconName="upload"
-                className="mt-4 !bg-background-color-3 px-8 text-lg !text-font-color-black hover:border-background-color-3 dark:!bg-dark-background-color-3 dark:!text-font-color-black dark:hover:border-background-color-3"
-                clickHandler={importAppData}
               />
             </div>
           </div>

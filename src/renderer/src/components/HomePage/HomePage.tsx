@@ -4,7 +4,6 @@ import { AppUpdateContext } from '../../contexts/AppUpdateContext';
 import useResizeObserver from '../../hooks/useResizeObserver';
 
 import roundTo from '../../../../common/roundTo';
-import storage from '../../utils/localStorage';
 
 import MainContainer from '../MainContainer';
 import Button from '../Button';
@@ -313,30 +312,6 @@ const HomePage = () => {
     );
   }, [changePromptMenuData]);
 
-  const importAppData = useCallback(
-    (
-      _: unknown,
-      setIsDisabled: (state: boolean) => void,
-      setIsPending: (state: boolean) => void
-    ) => {
-      setIsDisabled(true);
-      setIsPending(true);
-
-      return window.api.settingsHelpers
-        .importAppData()
-        .then((res) => {
-          if (res) storage.setAllItems(res);
-          return undefined;
-        })
-        .finally(() => {
-          setIsDisabled(false);
-          setIsPending(false);
-        })
-        .catch((err) => console.error(err));
-    },
-    []
-  );
-
   const homePageContextMenus: ContextMenuItem[] = useMemo(
     () =>
       window.api.properties.isInDevelopment
@@ -437,12 +412,6 @@ const HomePage = () => {
                 iconClassName="material-icons-round-outlined"
                 className="mt-4 !bg-background-color-3 px-8 text-lg !text-font-color-black hover:border-background-color-3 dark:!bg-dark-background-color-3 dark:!text-font-color-black dark:hover:border-background-color-3"
                 clickHandler={addNewSongs}
-              />
-              <Button
-                label={t('settingsPage.importAppData')}
-                iconName="publish"
-                className="mt-4 !bg-background-color-3 px-8 text-lg !text-font-color-black hover:border-background-color-3 dark:!bg-dark-background-color-3 dark:!text-font-color-black dark:hover:border-background-color-3"
-                clickHandler={importAppData}
               />
             </div>
           </div>

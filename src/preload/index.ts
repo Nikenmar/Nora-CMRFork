@@ -412,8 +412,10 @@ const tierlistsData = {
 const statsData = {
   getStatsData: (timeRange: StatsTimeRange): Promise<StatsData> =>
     ipcRenderer.invoke('app/getStatsData', timeRange),
-  exportStatsData: (): Promise<{ success: boolean; message?: string }> =>
-    ipcRenderer.invoke('app/exportStatsData'),
+  exportStatsData: (options?: {
+    tierShuffleIntensity?: number;
+  }): Promise<{ success: boolean; message?: string }> =>
+    ipcRenderer.invoke('app/exportStatsData', options),
   importStatsData: (
     mergeMode: StatsMergeMode,
     source: StatsImportSource
@@ -422,7 +424,10 @@ const statsData = {
 
 // $ ELO DUELS (CMR)
 const eloDuels = {
-  getDuelPair: (): Promise<DuelPair | null> => ipcRenderer.invoke('app/getDuelPair'),
+  getDuelPair: (pinnedSongId?: string): Promise<DuelPair | null> =>
+    ipcRenderer.invoke('app/getDuelPair', pinnedSongId),
+  getDuelPairByIds: (songAId: string, songBId: string): Promise<DuelPair | null> =>
+    ipcRenderer.invoke('app/getDuelPairByIds', songAId, songBId),
   submitDuelResult: (songAId: string, songBId: string, winnerSongId: string): Promise<DuelResult> =>
     ipcRenderer.invoke('app/submitDuelResult', songAId, songBId, winnerSongId)
 };

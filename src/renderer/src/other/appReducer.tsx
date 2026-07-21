@@ -486,7 +486,8 @@ export const LOCAL_STORAGE_DEFAULT_TEMPLATE: LocalStorage = {
     frequency: 'normal',
     lastInviteAt: 0,
     listensSinceInvite: 0,
-    pendingDuels: 0
+    pendingDuels: 0,
+    pendingDuelPairs: []
   }
 };
 

@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { AppUpdateContext } from '../../contexts/AppUpdateContext';
 
 import Button from '../Button';
+import storage from '../../utils/localStorage';
 
 type ImportState = 'idle' | 'importing' | 'report';
 
@@ -26,15 +27,29 @@ const ImportStatsPrompt = () => {
         if (!res.success && !res.message && !res.alreadyImported) return setState('idle');
         setReport(res);
         setState('report');
-        if (res.success)
-          addNewNotifications([
+        if (res.success) {
+          const notifications: Parameters<typeof addNewNotifications>[0] = [
             {
               id: 'statsImportSuccess',
               duration: 5000,
               content: t('statsImport.reportMatched', { count: res.matchedSongs }),
               iconName: 'upload'
             }
-          ]);
+          ];
+          const intensity = res.importedPreferences?.tierShuffleIntensity;
+          if (typeof intensity === 'number') {
+            storage.preferences.setPreferences('tierShuffleIntensity', intensity);
+            notifications.push({
+              id: 'statsImportPreferences',
+              duration: 5000,
+              content: t('statsImport.preferencesApplied', {
+                value: Math.round(intensity * 100)
+              }),
+              iconName: 'auto_fix'
+            });
+          }
+          addNewNotifications(notifications);
+        }
         return undefined;
       })
       .catch((err) => {
@@ -98,12 +113,6 @@ const ImportStatsPrompt = () => {
           </div>
           <div className="buttons-container flex items-center justify-end gap-2">
             <Button
-              label={t('statsImport.pickFolder')}
-              iconName="folder"
-              className="import-stats-folder-btn !bg-background-color-3 px-6 text-sm !text-font-color-black hover:border-background-color-3 md:text-base dark:!bg-dark-background-color-3 dark:!text-font-color-black dark:hover:border-background-color-3"
-              clickHandler={() => runImport('folder', mergeMode)}
-            />
-            <Button
               label={t('statsImport.pickFile')}
               iconName="upload_file"
               className="import-stats-file-btn !bg-background-color-3 px-6 text-sm !text-font-color-black hover:border-background-color-3 md:text-base dark:!bg-dark-background-color-3 dark:!text-font-color-black dark:hover:border-background-color-3"
@@ -126,6 +135,12 @@ const ImportStatsPrompt = () => {
                 <li>{t('statsImport.reportUnmatched', { count: report.unmatchedSongs })}</li>
                 <li>{t('statsImport.reportMerged', { count: report.mergedListens })}</li>
                 {report.eloMerged && <li>{t('statsImport.reportElo')}</li>}
+                {typeof report.playlistsImported === 'number' && (
+                  <li>{t('statsImport.reportPlaylists', { count: report.playlistsImported })}</li>
+                )}
+                {typeof report.tierlistsImported === 'number' && (
+                  <li>{t('statsImport.reportTierlists', { count: report.tierlistsImported })}</li>
+                )}
                 {report.backupPath && (
                   <li className="break-all">
                     {t('statsImport.reportBackup', { path: report.backupPath })}
@@ -134,6 +149,13 @@ const ImportStatsPrompt = () => {
               </ul>
             ) : (
               <span>{report.message || t('statsImport.failed')}</span>
+            )}
+            {report.notes && report.notes.length > 0 && (
+              <ul className="mt-2 list-inside list-disc pl-4 text-sm opacity-75">
+                {report.notes.map((note) => (
+                  <li key={note}>{note}</li>
+                ))}
+              </ul>
             )}
             {report.alreadyImported && (
               <div className="mt-4">{t('statsImport.alreadyImportedWarning')}</div>

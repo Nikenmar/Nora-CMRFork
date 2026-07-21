@@ -14,6 +14,12 @@ import hashText from '../../utils/hashText';
 import { isAnErrorWithCode } from '../../utils/isAnErrorWithCode';
 import makeDir from '../../utils/makeDir';
 import logger from '../../logger';
+import {
+  importCollections,
+  isValidExportedPlaylist,
+  isValidExportPreferences,
+  isValidTierlistExport
+} from './importCollections';
 
 const isDefined = <T>(value: T | undefined): value is T => value !== undefined;
 
@@ -481,7 +487,12 @@ const backupCurrentStatsFiles = async () => {
   const epoch = Date.now();
   let firstBackupPath: string | undefined;
 
-  for (const fileName of ['listening_data.json', 'cmr_stats.json']) {
+  for (const fileName of [
+    'listening_data.json',
+    'cmr_stats.json',
+    'playlists.json',
+    'tierlists.json'
+  ]) {
     const source = path.join(userDataPath, fileName);
     const destination = path.join(backupsFolder, `${fileName}.backup.${epoch}.json`);
     try {
@@ -532,6 +543,27 @@ const importStatsData = async (
     return fail(validationError);
   }
 
+  // Optional blocks never abort the import — a malformed one is skipped with a note.
+  const blockNotes: string[] = [];
+  if (
+    exportData.playlists !== undefined &&
+    !(Array.isArray(exportData.playlists) && exportData.playlists.every(isValidExportedPlaylist))
+  ) {
+    blockNotes.push('Skipped a malformed playlists block.');
+    exportData = { ...exportData, playlists: undefined };
+  }
+  if (
+    exportData.tierlists !== undefined &&
+    !(Array.isArray(exportData.tierlists) && exportData.tierlists.every(isValidTierlistExport))
+  ) {
+    blockNotes.push('Skipped a malformed tierlists block.');
+    exportData = { ...exportData, tierlists: undefined };
+  }
+  if (exportData.preferences !== undefined && !isValidExportPreferences(exportData.preferences)) {
+    blockNotes.push('Skipped malformed preferences.');
+    exportData = { ...exportData, preferences: undefined };
+  }
+
   const cmrStats = getCmrStatsData();
 
   // Double-import guard: summing the same export twice would double every number.
@@ -565,7 +597,10 @@ const importStatsData = async (
       : [...cmrStats.importedStatsExportIds, exportData.exportId]
   });
 
-  // 5. Refresh listeners — no app restart needed.
+  // 5. Playlists + tierlists (no-ops for exports that don't carry them).
+  const collections = importCollections(exportData, matches);
+
+  // 6. Refresh listeners — no app restart needed.
   dataUpdateEvent('songs/listeningData');
   dataUpdateEvent('eloDuels');
 
@@ -577,12 +612,21 @@ const importStatsData = async (
     backupPath
   });
 
+  const notes = [...blockNotes, ...collections.notes];
   return {
     success: true,
     matchedSongs: mergedListening.matchedSongs,
     unmatchedSongs: mergedListening.unmatchedSongs,
     mergedListens: mergedListening.mergedEntries,
     eloMerged: mergedElo.merged,
+    ...(collections.playlistsImported > 0
+      ? { playlistsImported: collections.playlistsImported }
+      : {}),
+    ...(collections.tierlistsImported > 0
+      ? { tierlistsImported: collections.tierlistsImported }
+      : {}),
+    ...(exportData.preferences ? { importedPreferences: exportData.preferences } : {}),
+    ...(notes.length > 0 ? { notes } : {}),
     ...(backupPath ? { backupPath } : {})
   };
 };

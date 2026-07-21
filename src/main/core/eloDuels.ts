@@ -90,12 +90,34 @@ export const submitDuelResult = (
   return { deltaA, deltaB, ratingA: updatedA.rating, ratingB: updatedB.rating };
 };
 
+const buildSongEntry = (
+  songById: Map<string, SavableSongData>,
+  elo: EloData,
+  songId: string
+): DuelSongEntry | undefined => {
+  const song = songById.get(songId);
+  if (!song) return undefined;
+  const rating = getRating(elo, songId);
+  return {
+    songId,
+    title: song.title,
+    artists: song.artists?.map((artist) => artist.name) ?? [],
+    duration: song.duration,
+    path: resolveSongFilePath(song.path, false),
+    artworkPaths: getSongArtworkPath(song.songId, song.isArtworkAvailable),
+    rating: rating.rating,
+    games: rating.games
+  };
+};
+
 /**
  * Picks a duel pair from LISTENED songs only (a song you never heard can't be
- * judged). A leans recent (70% from the History playlist), B leans informative
- * (80% among the 15 nearest by rating) and skips A's last 15 opponents.
+ * judged). When pinnedSongId is given (an earned duel for a just-finished
+ * listen), it becomes A; otherwise A leans recent (70% from the History
+ * playlist). B leans informative (80% among the 15 nearest by rating) and
+ * skips A's last 15 opponents.
  */
-export const getDuelPair = (): DuelPair | null => {
+export const getDuelPair = (pinnedSongId?: string): DuelPair | null => {
   const songs = getSongsData();
   const listeningData = getListeningData();
   const { elo } = getCmrStatsData();
@@ -124,7 +146,9 @@ export const getDuelPair = (): DuelPair | null => {
   const recentPool = historySongs.filter((songId) => poolSet.has(songId));
 
   let songAId: string;
-  if (recentPool.length > 0 && Math.random() < 0.7) {
+  if (pinnedSongId && poolSet.has(pinnedSongId)) {
+    songAId = pinnedSongId;
+  } else if (recentPool.length > 0 && Math.random() < 0.7) {
     songAId = randomItem(recentPool);
   } else {
     const weights = pool.map((songId) => 1 / (1 + getRating(elo, songId).games));
@@ -171,24 +195,33 @@ export const getDuelPair = (): DuelPair | null => {
     songBId = randomItem(candidates);
   }
 
-  const toEntry = (songId: string): DuelSongEntry | undefined => {
-    const song = songById.get(songId);
-    if (!song) return undefined;
-    const rating = getRating(elo, songId);
-    return {
-      songId,
-      title: song.title,
-      artists: song.artists?.map((artist) => artist.name) ?? [],
-      duration: song.duration,
-      path: resolveSongFilePath(song.path, false),
-      artworkPaths: getSongArtworkPath(song.songId, song.isArtworkAvailable),
-      rating: rating.rating,
-      games: rating.games
-    };
-  };
+  const songA = buildSongEntry(songById, elo, songAId);
+  const songB = buildSongEntry(songById, elo, songBId);
+  if (!songA || !songB) return null;
+  return { songA, songB };
+};
 
-  const songA = toEntry(songAId);
-  const songB = toEntry(songBId);
+/**
+ * Rehydrates a persisted backlog pair. Both songs must still exist, be
+ * non-blacklisted and distinct — stale queue entries fail null and the
+ * caller drops them.
+ */
+export const getDuelPairByIds = (songAId: string, songBId: string): DuelPair | null => {
+  if (typeof songAId !== 'string' || typeof songBId !== 'string' || songAId === songBId)
+    return null;
+
+  const songs = getSongsData();
+  const { elo } = getCmrStatsData();
+  const songById = new Map(songs.map((song) => [song.songId, song]));
+
+  const songAData = songById.get(songAId);
+  const songBData = songById.get(songBId);
+  if (!songAData || !songBData) return null;
+  if (isSongBlacklisted(songAData.songId, songAData.path)) return null;
+  if (isSongBlacklisted(songBData.songId, songBData.path)) return null;
+
+  const songA = buildSongEntry(songById, elo, songAId);
+  const songB = buildSongEntry(songById, elo, songBId);
   if (!songA || !songB) return null;
   return { songA, songB };
 };

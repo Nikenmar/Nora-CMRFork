@@ -6,6 +6,7 @@ import { AppUpdateContext } from '../../contexts/AppUpdateContext';
 import { store } from '@renderer/store';
 import i18n from '../../i18n';
 import { valueRounder } from '../../utils/valueRounder';
+import storage from '../../utils/localStorage';
 
 import Dropdown, { type DropdownOption } from '../Dropdown';
 import MainContainer from '../MainContainer';
@@ -111,7 +112,9 @@ const StatsPage = () => {
 
   const exportStats = useCallback(() => {
     window.api.statsData
-      .exportStatsData()
+      .exportStatsData({
+        tierShuffleIntensity: storage.preferences.getPreferences('tierShuffleIntensity')
+      })
       .then((res) => {
         if (res.success)
           return addNewNotifications([

@@ -759,6 +759,23 @@ declare global {
     fileName: string;
   }
 
+  /** A user playlist inside a stats export. Favorites/History are never exported. */
+  interface ExportedPlaylist {
+    /** playlistId ON THE EXPORTING DEVICE — meaningless locally (ids are random per install). */
+    playlistId: string;
+    name: string;
+    /** songIds ON THE EXPORTING DEVICE — remapped via fingerprint matches on import. */
+    songs: string[];
+    /** ISO string once serialized to JSON. */
+    createdDate: Date;
+  }
+
+  /** Portable renderer-side preferences carried inside a stats export. */
+  interface StatsExportPreferences {
+    /** Smart Shuffle intensity, 0..1. */
+    tierShuffleIntensity?: number;
+  }
+
   interface StatsExportFile {
     format: 'nora-cmr-stats-export';
     formatVersion: 1;
@@ -771,6 +788,12 @@ declare global {
     listeningData: SongListeningData[];
     /** absent when the exported data has no duels. */
     elo?: EloData;
+    /** absent when the exporting device has no user playlists. */
+    playlists?: ExportedPlaylist[];
+    /** absent when the exporting device has no tierlists. IDs are foreign — remapped on import. */
+    tierlists?: SavableTierlist[];
+    /** absent when no portable preferences were provided at export time. */
+    preferences?: StatsExportPreferences;
   }
 
   interface StatsImportReport {
@@ -783,6 +806,14 @@ declare global {
     backupPath?: string;
     /** exportId seen before (separateDevices double-import warning). */
     alreadyImported?: boolean;
+    /** user playlists created or merged-into during this import. */
+    playlistsImported?: number;
+    /** tierlists created during this import. */
+    tierlistsImported?: number;
+    /** portable preferences from the file, for the renderer to apply. */
+    importedPreferences?: StatsExportPreferences;
+    /** human-readable notes about skipped/merged/broken blocks. */
+    notes?: string[];
   }
 
   interface StatsSongEntry {
@@ -872,6 +903,8 @@ declare global {
     listensSinceInvite: number;
     /** earned duel prompts that have not been voted on or skipped yet. */
     pendingDuels: number;
+    /** FIFO queue of earned duel pairs [songAId, songBId]; A = the just-listened track. */
+    pendingDuelPairs: [string, string][];
   }
 
   // ? Genre related types
