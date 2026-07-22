@@ -13,7 +13,8 @@ let isHandlingUpdate = false;
  * Pulls release metadata (`latest.yml`) from the fork's GitHub releases
  * (configured via the `publish` block in electron-builder.yml), compares the
  * published version against the installed one (semver), and — on every launch
- * with internet — prompts the user to update until they do.
+ * with internet — prompts the user to update until they do. Once accepted, the
+ * update downloads, installs silently, and relaunches Nora automatically.
  *
  * The right artifact (x64 / arm64) is chosen automatically by electron-updater
  * from the running process architecture; no manual selection needed.
@@ -37,7 +38,9 @@ export default async function checkForUpdates(mainWindow?: BrowserWindow) {
 
   // We prompt before downloading, so the user stays in control.
   autoUpdater.autoDownload = false;
-  autoUpdater.autoInstallOnAppQuit = true;
+  // Installation is explicit in `update-downloaded` so it always uses the NSIS
+  // silent-install and force-relaunch flags instead of waiting for a normal quit.
+  autoUpdater.autoInstallOnAppQuit = false;
   // The fork versions as `x.y.z-CMR-Fork`, which semver treats as a pre-release,
   // so pre-releases must be allowed for the comparison to offer them.
   autoUpdater.allowPrerelease = true;
@@ -55,7 +58,10 @@ export default async function checkForUpdates(mainWindow?: BrowserWindow) {
       type: 'info',
       title: 'Update available',
       message: `A new version of Nora (CMR Fork) is available: v${info.version}`,
-      detail: 'You are on v' + autoUpdater.currentVersion.version + '. Download and install it now?',
+      detail:
+        'You are on v' +
+        autoUpdater.currentVersion.version +
+        '. Nora will download the update, close, install it silently, and reopen automatically.',
       buttons: ['Update now', 'Later'],
       defaultId: 0,
       cancelId: 1,
@@ -75,20 +81,15 @@ export default async function checkForUpdates(mainWindow?: BrowserWindow) {
     logger.debug('Downloading update…', { percent: Math.round(progress.percent) });
   });
 
-  autoUpdater.on('update-downloaded', async (info) => {
-    logger.info('Update downloaded.', { version: info.version });
-    const { response } = await dialog.showMessageBox(mainWindow!, {
-      type: 'info',
-      title: 'Update ready',
-      message: `Nora v${info.version} has been downloaded.`,
-      detail: 'The app will restart to install the update.',
-      buttons: ['Restart now', 'On next quit'],
-      defaultId: 0,
-      cancelId: 1,
-      noLink: true
+  autoUpdater.on('update-downloaded', (info) => {
+    logger.info('Update downloaded. Installing silently and restarting Nora.', {
+      version: info.version
     });
 
-    if (response === 0) setImmediate(() => autoUpdater.quitAndInstall());
+    // electron-updater maps these arguments to NSIS `/S` and `--force-run`.
+    // Its own `--updated` flag preserves the existing install location and
+    // shortcuts, which keeps the Windows taskbar pin attached to the same AUMID.
+    autoUpdater.quitAndInstall(true, true);
   });
 
   try {

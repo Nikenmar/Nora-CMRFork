@@ -85,13 +85,15 @@ const AddSongsToPlaylistsPrompt = (props: AddSongsToPlaylistProp) => {
       .then((res) => {
         if (res.length > 0) {
           setPlaylists(() =>
-            res.map((playlist) => {
-              return {
-                ...playlist,
-                isSelected:
-                  songIds.length === 1 && playlist.songs.some((id) => songIds.includes(id))
-              };
-            })
+            res
+              .filter((playlist) => playlist.playlistId !== 'Rediscover')
+              .map((playlist) => {
+                return {
+                  ...playlist,
+                  isSelected:
+                    songIds.length === 1 && playlist.songs.some((id) => songIds.includes(id))
+                };
+              })
           );
         }
         return undefined;

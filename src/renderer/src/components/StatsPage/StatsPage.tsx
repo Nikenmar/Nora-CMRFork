@@ -14,6 +14,7 @@ import Button from '../Button';
 import Img from '../Img';
 import StatTile from './StatTile';
 import ActivityBarGraph from './ActivityBarGraph';
+import ActivityCalendar from './ActivityCalendar';
 import TopSongRow from './TopSongRow';
 import TopNameRow from './TopNameRow';
 
@@ -172,6 +173,14 @@ const StatsPage = () => {
     return `~${t('time.minuteWithCount', { count: minutes })}`;
   }, [stats, t]);
 
+  const mostActiveDayLabel = useMemo(() => {
+    const mostActiveDay = stats?.calendar.mostActiveDay;
+    if (!mostActiveDay) return '';
+    return new Intl.DateTimeFormat(i18n.language, { dateStyle: 'medium' }).format(
+      new Date(`${mostActiveDay.date}T00:00:00`)
+    );
+  }, [stats]);
+
   const hasData = !!stats && (stats.totals.totalListens > 0 || stats.elo.totalDuels > 0);
 
   return (
@@ -218,10 +227,7 @@ const StatsPage = () => {
                 label={t('statsPage.songsPlayed')}
                 value={valueRounder(stats.totals.distinctSongsPlayed)}
               />
-              <StatTile
-                label={t('statsPage.favorites')}
-                value={valueRounder(stats.totals.favorites)}
-              />
+              <ActivityCalendar days={stats.calendar.days} />
             </div>
 
             <section className="mb-6">
@@ -229,6 +235,31 @@ const StatsPage = () => {
                 {t('statsPage.listeningActivity')}
               </h2>
               <ActivityBarGraph key={stats.timeRange} data={activityData} />
+            </section>
+
+            <section className="mb-6">
+              <h2 className="mb-2 text-lg font-medium text-font-color-highlight dark:text-dark-font-color-highlight">
+                {t('statsPage.listeningCalendar')}
+              </h2>
+              <div className="grid grid-cols-3 gap-3">
+                <StatTile
+                  label={t('statsPage.currentStreak')}
+                  value={t('time.dayWithCount', { count: stats.calendar.currentStreak })}
+                />
+                <StatTile
+                  label={t('statsPage.longestStreak')}
+                  value={t('time.dayWithCount', { count: stats.calendar.longestStreak })}
+                />
+                <StatTile
+                  label={t('statsPage.mostActiveDay')}
+                  value={stats.calendar.mostActiveDay ? mostActiveDayLabel : '-'}
+                  title={
+                    stats.calendar.mostActiveDay
+                      ? `${mostActiveDayLabel} - ${t('songInfoPage.listensCount', { count: stats.calendar.mostActiveDay.listens })}`
+                      : undefined
+                  }
+                />
+              </div>
             </section>
 
             <div className="mb-6 grid gap-6 lg:grid-cols-3">

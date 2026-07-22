@@ -15,6 +15,7 @@ import { useStore } from '@tanstack/react-store';
 import { store } from '@renderer/store';
 
 const SensitiveActionConfirmPrompt = lazy(() => import('../SensitiveActionConfirmPrompt'));
+const RefreshRediscoverPrompt = lazy(() => import('./RefreshRediscoverPrompt'));
 
 const PlaylistInfoPage = () => {
   const currentlyActivePage = useStore(store, (state) => state.currentlyActivePage);
@@ -79,7 +80,8 @@ const PlaylistInfoPage = () => {
         const dataEvents = (e as DetailAvailableEvent<DataUpdateEvent[]>).detail;
         for (let i = 0; i < dataEvents.length; i += 1) {
           const event = dataEvents[i];
-          if (event.dataType === 'playlists') fetchPlaylistData();
+          if (event.dataType === 'playlists' || event.dataType === 'playlists/rediscover')
+            fetchPlaylistData();
         }
       }
     };
@@ -97,6 +99,7 @@ const PlaylistInfoPage = () => {
         for (let i = 0; i < dataEvents.length; i += 1) {
           const event = dataEvents[i];
           if (
+            event.dataType === 'playlists/rediscover' ||
             event.dataType === 'playlists/newSong' ||
             event.dataType === 'playlists/deletedSong' ||
             event.dataType === 'blacklist/songBlacklist' ||
@@ -154,6 +157,11 @@ const PlaylistInfoPage = () => {
       />
     );
   }, [addNewNotifications, changePromptMenuData, t]);
+
+  const refreshRediscover = useCallback(
+    () => changePromptMenuData(true, <RefreshRediscoverPrompt />),
+    [changePromptMenuData]
+  );
 
   const addSongsToQueue = useCallback(() => {
     const validSongIds = playlistSongs
@@ -216,6 +224,12 @@ const PlaylistInfoPage = () => {
             clickHandler: clearSongHistory,
             isVisible: playlistData.playlistId === 'History',
             isDisabled: !(playlistData.songs && playlistData.songs.length > 0)
+          },
+          {
+            label: t('playlistsPage.refreshRediscover'),
+            iconName: 'refresh',
+            clickHandler: refreshRediscover,
+            isVisible: playlistData.playlistId === 'Rediscover'
           },
           {
             label: t('common.playAll'),

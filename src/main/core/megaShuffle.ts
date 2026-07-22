@@ -36,7 +36,7 @@ const FRESHNESS_PENALTY = 0.6;
  * weight = (1 - intensity) + intensity·score, then a freshness penalty.
  */
 
-const tierValue = (index: number, total: number) => {
+export const tierValue = (index: number, total: number) => {
   if (total <= 0) return 0;
   const linear = (total - index) / total; // S => 1.0, last tier => 1/total
   return linear ** 1.4; // mild curve so the top tiers clearly stand out

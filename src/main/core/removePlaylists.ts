@@ -13,7 +13,9 @@ const removePlaylists = (playlistIds: string[]) => {
       playlists.some((playlist) => playlistIds.includes(playlist.playlistId))
     ) {
       const updatedPlaylists = playlists.filter((playlist) => {
-        const isAReservedPlaylist = ['History', 'Favorites'].includes(playlist.playlistId);
+        const isAReservedPlaylist = ['History', 'Favorites', 'Rediscover'].includes(
+          playlist.playlistId
+        );
         const isMarkedToDelete = playlistIds.includes(playlist.playlistId) && !isAReservedPlaylist;
 
         if (isMarkedToDelete) deletedPlaylistIds.push(playlist.playlistId);

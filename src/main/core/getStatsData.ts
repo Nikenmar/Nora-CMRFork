@@ -84,6 +84,59 @@ const buildActivity = (
   });
 };
 
+/**
+ * Range-independent GitHub-style activity calendar: always the trailing 53
+ * weeks (371 days) ending today, plus streak stats. Consumed by the renderer
+ * as 7 weekday rows x N week columns.
+ */
+const buildCalendar = (listeningData: SongListeningData[], nowMs: number) => {
+  const dayCount = 371;
+  const now = new Date(nowMs);
+  const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+  const days = new Array<number>(dayCount).fill(0);
+
+  for (const entry of listeningData)
+    for (const year of entry.listens)
+      for (const [dateMs, count] of year.listens) {
+        const date = new Date(dateMs);
+        const dayStart = new Date(date.getFullYear(), date.getMonth(), date.getDate()).getTime();
+        const daysAgo = Math.round((startOfToday - dayStart) / DAY_MS);
+        if (daysAgo >= 0 && daysAgo < dayCount) days[dayCount - 1 - daysAgo] += count;
+      }
+
+  // Current streak counts back from today; a silent (so far) today does not kill it.
+  let currentStreak = 0;
+  let cursor = dayCount - 1;
+  if (days[cursor] === 0) cursor -= 1;
+  while (cursor >= 0 && days[cursor] > 0) {
+    currentStreak += 1;
+    cursor -= 1;
+  }
+
+  let longestStreak = 0;
+  let run = 0;
+  let mostActiveDay: { date: string; listens: number } | null = null;
+  for (let i = 0; i < dayCount; i += 1) {
+    run = days[i] > 0 ? run + 1 : 0;
+    if (run > longestStreak) longestStreak = run;
+    if (days[i] > 0 && (!mostActiveDay || days[i] > mostActiveDay.listens))
+      mostActiveDay = {
+        date: toISODate(startOfToday - (dayCount - 1 - i) * DAY_MS),
+        listens: days[i]
+      };
+  }
+
+  return {
+    days: days.map((listens, i) => ({
+      date: toISODate(startOfToday - (dayCount - 1 - i) * DAY_MS),
+      listens
+    })),
+    currentStreak,
+    longestStreak,
+    mostActiveDay
+  };
+};
+
 const getStatsData = (timeRange: StatsTimeRange): StatsData => {
   const now = Date.now();
   const rangeStart = getRangeStart(timeRange, now);
@@ -244,6 +297,7 @@ const getStatsData = (timeRange: StatsTimeRange): StatsData => {
       favorites
     },
     activity: buildActivity(listeningData, timeRange, now),
+    calendar: buildCalendar(listeningData, now),
     topSongs,
     topArtists,
     topAlbums,

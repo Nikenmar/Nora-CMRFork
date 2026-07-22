@@ -15,8 +15,8 @@ import { version } from '../../../../package.json';
 
 const EXPORT_FORMAT = 'nora-cmr-stats-export' as const;
 
-/** App-managed playlist ids — never exported (Favorites = likes, History is derived). */
-const EXCLUDED_PLAYLIST_IDS = new Set(['Favorites', 'History']);
+/** App-managed playlist ids — never exported (Favorites = likes, History/Rediscover are derived). */
+const EXCLUDED_PLAYLIST_IDS = new Set(['Favorites', 'History', 'Rediscover']);
 
 const exportStatsData = async (options?: {
   tierShuffleIntensity?: number;

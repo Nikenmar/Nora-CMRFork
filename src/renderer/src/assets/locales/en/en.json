@@ -342,7 +342,14 @@
     "createdOn": "Created on {{val, datetime}}",
     "clearSongHistoryConfirm": "Clear song history",
     "clearSongHistoryConfirmNotice": "Are you sure you want to clear your song history? This action cannot be undone.",
-    "clearSongHistorySuccess": "Your song history has been cleared successfully."
+    "clearSongHistorySuccess": "Your song history has been cleared successfully.",
+    "refreshRediscover": "Refresh",
+    "refreshRediscoverTitle": "Refresh Rediscover",
+    "refreshRediscoverHint": "Rediscover collects tracks you love (tier lists, ELO, full listens) that you have not heard lately. Pick how long a track must be absent to count as forgotten.",
+    "rediscoverThreshold30": "30 days",
+    "rediscoverThreshold60": "60 days",
+    "rediscoverThreshold90": "90 days",
+    "rediscoverRefreshSuccess": "Rediscover refreshed: {{count}} tracks."
   },
 
   "albumsPage": {
@@ -797,7 +804,11 @@
     "importStats": "Import stats",
     "empty": "No listening data yet. Play some music and your stats will show up here.",
     "exportSuccess": "Stats exported successfully.",
-    "exportFailed": "Failed to export stats."
+    "exportFailed": "Failed to export stats.",
+    "listeningCalendar": "Listening calendar",
+    "currentStreak": "Current streak",
+    "longestStreak": "Longest streak",
+    "mostActiveDay": "Most active day"
   },
 
   "statsImport": {

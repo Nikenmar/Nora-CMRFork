@@ -647,7 +647,7 @@ declare global {
   // ? Playlists related types
 
   interface SavablePlaylist {
-    playlistId: 'Favorites' | 'History' | string;
+    playlistId: 'Favorites' | 'History' | 'Rediscover' | string;
     name: string;
     /** song ids of the songs in the playlist */
     songs: string[];
@@ -846,6 +846,13 @@ declare global {
     };
     /** 12 month buckets (last12Months/allTime) or 30 day buckets (last30Days). */
     activity: { label: string; listens: number }[];
+    /** GitHub-style trailing-53-weeks activity calendar + streaks (range-independent). */
+    calendar: {
+      days: { date: string; listens: number }[];
+      currentStreak: number;
+      longestStreak: number;
+      mostActiveDay: { date: string; listens: number } | null;
+    };
     topSongs: StatsSongEntry[];
     topArtists: StatsNameEntry[];
     topAlbums: StatsNameEntry[];
@@ -897,9 +904,9 @@ declare global {
 
   interface DuelsLocalStorage {
     frequency: DuelInviteFrequency;
-    /** ms timestamp of the last invite shown (0 = never). */
+    /** Legacy: ms of the last earned duel. Unused since full-listen pacing replaced the time gate. */
     lastInviteAt: number;
-    /** listens registered since the last invite. */
+    /** full listens (90%+) registered since the last earned duel. */
     listensSinceInvite: number;
     /** earned duel prompts that have not been voted on or skipped yet. */
     pendingDuels: number;
@@ -1363,6 +1370,7 @@ declare global {
     | 'playlists/deletedPlaylist'
     | 'playlists/history'
     | 'playlists/favorites'
+    | 'playlists/rediscover'
     | 'playlists/newSong'
     | 'playlists/deletedSong'
     | 'userData'

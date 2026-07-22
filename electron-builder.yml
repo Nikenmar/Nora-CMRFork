@@ -71,6 +71,7 @@ win:
 
 nsis:
   shortcutName: '${productName}'
+  include: ./build/installer.nsh
   allowElevation: false
   # A stable install location lets NSIS preserve the existing Start Menu/AUMID
   # shortcut on both auto-updates and manual installs over an existing Nora.

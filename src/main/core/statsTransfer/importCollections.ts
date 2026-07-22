@@ -13,6 +13,9 @@ import logger from '../../logger';
 // A malformed optional block is skipped with a note — it never aborts the import.
 // ---------------------------------------------------------------------------
 
+/** System playlist names are app-managed on this install - a foreign export must not merge into them. */
+const RESERVED_SYSTEM_PLAYLIST_NAMES = new Set(['history', 'favorites', 'rediscover']);
+
 export const isValidExportedPlaylist = (playlist: ExportedPlaylist) =>
   !!playlist &&
   typeof playlist.playlistId === 'string' &&
@@ -124,6 +127,10 @@ export const importCollections = (
   // --- Playlists ---
   if (hasPlaylistsBlock) {
     for (const foreign of exportData.playlists ?? []) {
+      if (RESERVED_SYSTEM_PLAYLIST_NAMES.has(foreign.name.trim().toLowerCase())) {
+        notes.push(`Playlist '${foreign.name}' is app-managed here - skipped.`);
+        continue;
+      }
       const { localIds, dropped } = remapSongIds(foreign.songs);
       const playlist = upsertPlaylistByName(foreign.name, localIds, parseDate(foreign.createdDate));
       playlistIdMap.set(foreign.playlistId, playlist.playlistId);

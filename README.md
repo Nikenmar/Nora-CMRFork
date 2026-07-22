@@ -2,7 +2,7 @@
 
 My personal fork of [Nora](https://github.com/Sandakan/Nora).
 
-It started as a one-line fix for a crash and grew from there. The fork still sits on Nora `v3.1.0`, but by now it has a proper set of additions on top - a built-in tier-list maker, a smart shuffle that actually uses your rankings, portable listening stats, ELO song duels, and a handful of fixes I wanted out of the player.
+It started as a one-line fix for a crash and grew from there. The fork still sits on Nora `v3.1.0`, but by now it has a proper set of additions on top: a built-in tier-list maker, a smart shuffle that actually uses your rankings, portable listening stats with an activity calendar, ELO song duels, a Rediscover playlist for music you forgot you loved, and a handful of fixes I wanted out of the player.
 
 ---
 
@@ -77,17 +77,27 @@ Now it uses a proper **perceptual (dB) curve**, the same kind of taper the Windo
 
 A new **Stats** tab with your listening numbers: total listens, full listens, skips, approximate listening time, switchable all-time / last-12-month / last-30-day views, a monthly or daily activity graph, top songs / artists / albums / genres, most skipped, and your ELO standings.
 
+The tile row has a **listening calendar** too - a GitHub-style heatmap of your last 53 weeks (it took the place of the Favorites counter I never used), with your current and longest streaks and your most active day underneath. Dates follow the app language, and the heatmap always stays anchored to the current week.
+
 It also does **portable stats** - and then some. One JSON file carries your listening history, ELO ratings, **playlists**, **tier lists** (rankings and shuffle influence included) and your **Smart Shuffle intensity**. Song ids and folder paths can be different between installs, so the importer recognizes tracks by metadata fingerprints (file name, title + artists, duration) and merges day by day, never by raw ids or timestamps.
 
 There are two merge modes: **add the numbers together** for devices used separately, or **take the maximum** when the data originally came from the same library so nothing gets double-counted. A backup of your current stats files is written before every import, malformed exports are rejected before anything is changed, and importing the same additive export twice won't duplicate it.
 
 Playlists merge by name (missing songs get added, nothing is replaced). Tier lists import whole - a tier list whose folder sources don't exist on the new machine gets an "Imported: ..." fallback playlist built from its ranked tracks, so the board renders right away. A same-named tier list is skipped rather than merged. The old app-data export in Settings is gone - this one file is the way to move your setup between machines.
 
+## Rediscover
+
+A third system playlist, next to History and Favorites - with its own icon and the same "it cannot be deleted or renamed" rules.
+
+It collects tracks you clearly love - placed high in your tier lists, rated in ELO duels, or played through often - that you have not heard in a while (or never, in-app). It refreshes itself on every startup, and you can rebuild it by hand from the playlist page with a 30 / 60 / 90-day "forgotten" threshold. Every refresh fully regenerates it, so do not get attached to its contents - it is a rotating snapshot, not a collection.
+
+Being derived data, it does not travel in the portable stats export - it is rebuilt from your own library wherever you are.
+
 ## ELO duels
 
 The **Duel** button above Settings is always there when you want it: two songs from your listening history side by side, pick the one you like more, and the next duel follows automatically. Standard ELO math - everyone starts at 1200, K=32. Cards have hover preview buttons that play a snippet of the song without touching your queue or the main player.
 
-Nora can also build up a small duel backlog as you listen: every earned duel is generated the moment you finish a track and that track is pinned as one of the contenders - so the backlog is always about the music you have actually been hearing lately. The frequency is configurable in Settings, the queue persists across restarts, and it is capped at 100. The duel window can be minimized without losing the current pair or the rest of the batch.
+Nora can also build up a small duel backlog as you listen: every earned duel is generated the moment you finish a track and that track is pinned as one of the contenders - so the backlog is always about the music you have actually been hearing lately. The frequency is configurable in Settings (only full 90%+ listens count towards it - a skip never earns anything), the queue persists across restarts, and it is capped at 100. The duel window can be minimized without losing the current pair or the rest of the batch.
 
 Your top-rated songs and recent duels live on the Stats tab from the very first result. And once you've done ten or so duels, the Smart Shuffle starts using your ratings as a fourth signal - songs that have never dueled stay neutral, so not playing along never hurts a track.
 

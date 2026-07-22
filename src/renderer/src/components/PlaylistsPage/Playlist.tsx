@@ -240,7 +240,9 @@ export const Playlist = (props: PlaylistProp) => {
         },
         isDisabled: isMultipleSelectionsEnabled
           ? false
-          : props.playlistId === 'History' || props.playlistId === 'Favorites'
+          : props.playlistId === 'History' ||
+            props.playlistId === 'Favorites' ||
+            props.playlistId === 'Rediscover'
       },
       {
         label: t('playlist.renamePlaylist'),
@@ -250,7 +252,9 @@ export const Playlist = (props: PlaylistProp) => {
         },
         isDisabled: isMultipleSelectionsEnabled
           ? false
-          : props.playlistId === 'History' || props.playlistId === 'Favorites'
+          : props.playlistId === 'History' ||
+            props.playlistId === 'Favorites' ||
+            props.playlistId === 'Rediscover'
       },
       {
         label: t(`common.${isAMultipleSelection ? 'unselect' : 'select'}`),
@@ -290,7 +294,9 @@ export const Playlist = (props: PlaylistProp) => {
         handlerFunction: () => true,
         isDisabled: isMultipleSelectionsEnabled
           ? false
-          : props.playlistId === 'History' || props.playlistId === 'Favorites'
+          : props.playlistId === 'History' ||
+            props.playlistId === 'Favorites' ||
+            props.playlistId === 'Rediscover'
       },
       {
         label: t(
@@ -309,7 +315,9 @@ export const Playlist = (props: PlaylistProp) => {
         },
         isDisabled: isMultipleSelectionsEnabled
           ? false
-          : props.playlistId === 'History' || props.playlistId === 'Favorites'
+          : props.playlistId === 'History' ||
+            props.playlistId === 'Favorites' ||
+            props.playlistId === 'Rediscover'
       }
     ];
   }, [

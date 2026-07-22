@@ -60,6 +60,7 @@ import getAllSongs from './core/getAllSongs';
 import toggleLikeArtists from './core/toggleLikeArtists';
 import fetchSongInfoFromLastFM from './core/fetchSongInfoFromLastFM';
 import clearSongHistory from './core/clearSongHistory';
+import refreshRediscoverPlaylist from './core/rediscover';
 import clearSearchHistoryResults from './core/clearSeachHistoryResults';
 import getSongInfo from './core/getSongInfo';
 import updateSongListeningData from './core/updateSongListeningData';
@@ -423,6 +424,10 @@ export function initializeIPC(mainWindow: BrowserWindow, abortSignal: AbortSigna
     );
 
     ipcMain.handle('app/clearSongHistory', () => clearSongHistory());
+
+    ipcMain.handle('app/refreshRediscoverPlaylist', (_, thresholdDays: number) =>
+      refreshRediscoverPlaylist(thresholdDays)
+    );
 
     ipcMain.handle(
       'app/deleteSongsFromSystem',

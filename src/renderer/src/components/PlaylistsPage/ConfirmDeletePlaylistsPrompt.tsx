@@ -33,7 +33,7 @@ const ConfirmDeletePlaylistsPrompt = (props: ConfirmDeletePlaylistProp) => {
   }, [playlistIds]);
 
   const arePlaylistsRemovable = useMemo(() => {
-    const unRemovablePlaylistIds = ['History', 'Favorites'];
+    const unRemovablePlaylistIds = ['History', 'Favorites', 'Rediscover'];
 
     return !playlistIds.some((playlistId) => unRemovablePlaylistIds.includes(playlistId));
   }, [playlistIds]);

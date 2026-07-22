@@ -380,7 +380,9 @@ const playlistsData = {
     ipcRenderer.invoke('app/getArtworksForMultipleArtworksCover', songIds),
   exportPlaylist: (playlistId: string): Promise<void> =>
     ipcRenderer.invoke('app/exportPlaylist', playlistId),
-  importPlaylist: (): Promise<void> => ipcRenderer.invoke('app/importPlaylist')
+  importPlaylist: (): Promise<void> => ipcRenderer.invoke('app/importPlaylist'),
+  refreshRediscoverPlaylist: (thresholdDays?: number): Promise<{ count: number }> =>
+    ipcRenderer.invoke('app/refreshRediscoverPlaylist', thresholdDays)
 };
 
 // $ TIERLIST DATA AND CONTROLS

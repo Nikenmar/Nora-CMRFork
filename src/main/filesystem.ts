@@ -63,9 +63,17 @@ export const FAVORITES_PLAYLIST_TEMPLATE: SavablePlaylist = {
   songs: [],
   isArtworkAvailable: true
 };
+export const REDISCOVER_PLAYLIST_TEMPLATE: SavablePlaylist = {
+  name: 'Rediscover',
+  playlistId: 'Rediscover',
+  createdDate: new Date(),
+  songs: [],
+  isArtworkAvailable: true
+};
 export const PLAYLIST_DATA_TEMPLATE: SavablePlaylist[] = [
   HISTORY_PLAYLIST_TEMPLATE,
-  FAVORITES_PLAYLIST_TEMPLATE
+  FAVORITES_PLAYLIST_TEMPLATE,
+  REDISCOVER_PLAYLIST_TEMPLATE
 ];
 
 export const BLACKLIST_TEMPLATE: Blacklist = {

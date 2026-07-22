@@ -37,6 +37,7 @@ import addWatchersToParentFolders from './fs/addWatchersToParentFolders';
 import manageTaskbarPlaybackButtonControls from './core/manageTaskbarPlaybackButtonControls';
 import checkForStartUpSongs from './core/checkForStartUpSongs';
 import checkForNewSongs from './core/checkForNewSongs';
+import refreshRediscoverPlaylist from './core/rediscover';
 import changeAppTheme from './core/changeAppTheme';
 import { savePendingSongLyrics } from './saveLyricsToSong';
 import { closeAllAbortControllers, saveAbortController } from './fs/controlAbortControllers';
@@ -190,6 +191,7 @@ const createWindow = async () => {
     if (app.hasSingleInstanceLock()) {
       logger.info('Started checking for new songs during the application start.');
       checkForNewSongs();
+      refreshRediscoverPlaylist();
       addWatchersToFolders();
       addWatchersToParentFolders();
     }

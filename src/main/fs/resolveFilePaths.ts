@@ -11,6 +11,7 @@ import artistCoverImage from '../../renderer/src/assets/images/webp/artist_cover
 import playlistCoverImage from '../../renderer/src/assets/images/webp/playlist_cover_default.webp?asset';
 import favoritesPlaylistCoverImage from '../../renderer/src/assets/images/webp/favorites-playlist-icon.webp?asset';
 import historyPlaylistCoverImage from '../../renderer/src/assets/images/webp/history-playlist-icon.webp?asset';
+import rediscoverPlaylistCoverImage from '../../renderer/src/assets/images/webp/rediscover-playlist-icon.webp?asset';
 
 let timestamps = {
   songs: Date.now(),
@@ -165,10 +166,12 @@ export const getPlaylistArtworkPath = (
       ? joinPath(DEFAULT_FILE_URL, historyPlaylistCoverImage) + timestampStr
       : playlistId === 'Favorites'
         ? joinPath(DEFAULT_FILE_URL, favoritesPlaylistCoverImage) + timestampStr
-        : isArtworkAvailable
-          ? joinPath(DEFAULT_FILE_URL, DEFAULT_ARTWORK_SAVE_LOCATION, `${playlistId}.webp`) +
-            timestampStr
-          : joinPath(DEFAULT_FILE_URL, playlistCoverImage) + timestampStr;
+        : playlistId === 'Rediscover'
+          ? joinPath(DEFAULT_FILE_URL, rediscoverPlaylistCoverImage) + timestampStr
+          : isArtworkAvailable
+            ? joinPath(DEFAULT_FILE_URL, DEFAULT_ARTWORK_SAVE_LOCATION, `${playlistId}.webp`) +
+              timestampStr
+            : joinPath(DEFAULT_FILE_URL, playlistCoverImage) + timestampStr;
   return {
     isDefaultArtwork: !isArtworkAvailable,
     artworkPath,
