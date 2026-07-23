@@ -92,7 +92,8 @@ export const TIERLIST_DATA_TEMPLATE: SavableTierlist[] = [];
 // ? mutate this data in place — always persist a fresh object via setCmrStatsData.
 export const CMR_STATS_TEMPLATE: CmrStatsData = {
   elo: { ratings: {}, history: [], totalDuels: 0 },
-  importedStatsExportIds: []
+  importedStatsExportIds: [],
+  duelMatchmaking: { skippedPairs: [] }
 };
 
 export const PALETTE_DATA_TEMPLATE: PaletteData[] = [DEFAULT_SONG_PALETTE];

@@ -9,6 +9,7 @@ import {
 } from '../filesystem';
 import { dataUpdateEvent } from '../main';
 import { isSongBlacklisted } from '../utils/isBlacklisted';
+import { getPositiveEloScore } from './duelMatchmaker';
 import { tierValue } from './megaShuffle';
 import logger from '../logger';
 
@@ -47,21 +48,10 @@ const refreshRediscoverPlaylist = (thresholdDays = 30): { count: number } => {
     // ----- "loved" signal 2: ELO (meaningful only after enough duels) -----
     const elo = getCmrStatsData().elo;
     const hasEloData = elo.totalDuels >= 10;
-    let eloMin = 0;
-    let eloMax = 0;
-    if (hasEloData) {
-      const rated = Object.values(elo.ratings)
-        .filter((rating) => rating.games >= 1)
-        .map((rating) => rating.rating);
-      if (rated.length > 0) {
-        eloMin = Math.min(...rated);
-        eloMax = Math.max(...rated);
-      }
-    }
     const eloScore = (songId: string) => {
       const rating = elo.ratings[songId];
-      if (!rating || rating.games < 1 || eloMax <= eloMin) return 0;
-      return (rating.rating - eloMin) / (eloMax - eloMin);
+      if (!rating || rating.games < 1) return 0;
+      return getPositiveEloScore(rating);
     };
 
     // ----- listening: last-heard timestamps + full-listen nudge -----

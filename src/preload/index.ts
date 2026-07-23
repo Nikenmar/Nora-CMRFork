@@ -407,7 +407,9 @@ const tierlistsData = {
   getTierlistArtworks: (songIds: string[]): Promise<Record<string, string>> =>
     ipcRenderer.invoke('app/getTierlistArtworks', songIds),
   getMegaShuffleWeights: (songIds: string[], intensity?: number): Promise<Record<string, number>> =>
-    ipcRenderer.invoke('app/getMegaShuffleWeights', songIds, intensity)
+    ipcRenderer.invoke('app/getMegaShuffleWeights', songIds, intensity),
+  getMegaShuffleData: (songIds: string[], intensity?: number): Promise<MegaShuffleData> =>
+    ipcRenderer.invoke('app/getMegaShuffleData', songIds, intensity)
 };
 
 // $ CMR STATS DATA (stats page + portable export/import)
@@ -428,8 +430,15 @@ const statsData = {
 const eloDuels = {
   getDuelPair: (pinnedSongId?: string): Promise<DuelPair | null> =>
     ipcRenderer.invoke('app/getDuelPair', pinnedSongId),
+  selectDuelAnchor: (
+    candidates: DuelAnchorCandidate[],
+    excludedSongIds?: string[]
+  ): Promise<string | null> =>
+    ipcRenderer.invoke('app/selectDuelAnchor', candidates, excludedSongIds),
   getDuelPairByIds: (songAId: string, songBId: string): Promise<DuelPair | null> =>
     ipcRenderer.invoke('app/getDuelPairByIds', songAId, songBId),
+  recordDuelSkip: (songAId: string, songBId: string, reason?: DuelSkipReason): Promise<void> =>
+    ipcRenderer.invoke('app/recordDuelSkip', songAId, songBId, reason),
   submitDuelResult: (songAId: string, songBId: string, winnerSongId: string): Promise<DuelResult> =>
     ipcRenderer.invoke('app/submitDuelResult', songAId, songBId, winnerSongId)
 };

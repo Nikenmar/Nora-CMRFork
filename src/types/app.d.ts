@@ -705,6 +705,8 @@ declare global {
     games: number;
     wins: number;
     losses: number;
+    /** Draws introduced by the Too close feedback action. */
+    draws?: number;
     /** ms timestamp of the last duel this song took part in. */
     lastDuelAt?: number;
   }
@@ -714,7 +716,7 @@ declare global {
     at: number;
     songAId: string;
     songBId: string;
-    winner: 'A' | 'B';
+    winner: 'A' | 'B' | 'draw';
     /** signed rating changes applied to song A / song B. */
     deltaA: number;
     deltaB: number;
@@ -728,6 +730,27 @@ declare global {
     totalDuels: number;
   }
 
+  type DuelSkipReason = 'tooClose' | 'tooDifferent' | 'cantDecide';
+
+  interface DuelSkipRecord {
+    at: number;
+    songAId: string;
+    songBId: string;
+    /** Absent on records created before reasoned feedback; treated as cantDecide. */
+    reason?: DuelSkipReason;
+  }
+
+  interface DuelMatchmakingData {
+    /** Newest first. Used only to cool down pairs that were hard to compare. */
+    skippedPairs: DuelSkipRecord[];
+  }
+
+  interface MegaShuffleData {
+    weights: Record<string, number>;
+    /** Pairwise signals used by the renderer's final queue ordering pass. */
+    pairFeedback: DuelSkipRecord[];
+  }
+
   /**
    * Persisted shape of the isolated `cmr_stats.json` store. On installs that
    * predate this file it simply doesn't exist and is created fresh — no
@@ -737,6 +760,8 @@ declare global {
     elo: EloData;
     /** exportIds already imported — anti-double-import guard. */
     importedStatsExportIds: string[];
+    /** Optional for migration compatibility with pre-matchmaker stores. */
+    duelMatchmaking?: DuelMatchmakingData;
   }
 
   type StatsTimeRange = 'allTime' | 'last12Months' | 'last30Days';
@@ -862,15 +887,18 @@ declare global {
       totalDuels: number;
       topRated: (StatsSongEntry & {
         rating: number;
+        effectiveRating: number;
+        isProvisional: boolean;
         games: number;
         wins: number;
         losses: number;
+        draws: number;
       })[];
       recentDuels: {
         at: number;
         titleA: string;
         titleB: string;
-        winner: 'A' | 'B';
+        winner: 'A' | 'B' | 'draw';
         deltaA: number;
         deltaB: number;
       }[];
@@ -891,6 +919,8 @@ declare global {
   interface DuelPair {
     songA: DuelSongEntry;
     songB: DuelSongEntry;
+    /** Present for earned duels, independent of randomized A/B presentation. */
+    ticketAnchorSongId?: string;
   }
 
   interface DuelResult {
@@ -902,6 +932,16 @@ declare global {
 
   type DuelInviteFrequency = 'off' | 'rare' | 'normal' | 'frequent';
 
+  interface DuelTicket {
+    anchorSongId: string;
+    earnedAt: number;
+  }
+
+  interface DuelAnchorCandidate {
+    songId: string;
+    listenedAt: number;
+  }
+
   interface DuelsLocalStorage {
     frequency: DuelInviteFrequency;
     /** Legacy: ms of the last earned duel. Unused since full-listen pacing replaced the time gate. */
@@ -910,6 +950,11 @@ declare global {
     listensSinceInvite: number;
     /** earned duel prompts that have not been voted on or skipped yet. */
     pendingDuels: number;
+    /** FIFO queue of earned duel opportunities. The opponent is chosen just in time. */
+    pendingDuelTickets: DuelTicket[];
+    /** Recent full listens accumulated toward the next ticket. */
+    duelAnchorCandidates: DuelAnchorCandidate[];
+    /** Legacy fixed-pair queue, retained only for one-time migration. */
     /** FIFO queue of earned duel pairs [songAId, songBId]; A = the just-listened track. */
     pendingDuelPairs: [string, string][];
   }

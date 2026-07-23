@@ -176,6 +176,7 @@ const isValidEloData = (elo: EloData) => {
       isNonNegativeNumber(rating.games) &&
       isNonNegativeNumber(rating.wins) &&
       isNonNegativeNumber(rating.losses) &&
+      (rating.draws === undefined || isNonNegativeNumber(rating.draws)) &&
       (rating.lastDuelAt === undefined || isNonNegativeNumber(rating.lastDuelAt))
   );
   if (!ratingsAreValid) return false;
@@ -186,7 +187,7 @@ const isValidEloData = (elo: EloData) => {
       isNonNegativeNumber(record.at) &&
       typeof record.songAId === 'string' &&
       typeof record.songBId === 'string' &&
-      (record.winner === 'A' || record.winner === 'B') &&
+      (record.winner === 'A' || record.winner === 'B' || record.winner === 'draw') &&
       isFiniteNumber(record.deltaA) &&
       isFiniteNumber(record.deltaB)
   );
@@ -393,6 +394,7 @@ const normalizeRating = (rating: EloSongRating): EloSongRating => ({
   games: typeof rating?.games === 'number' ? rating.games : 0,
   wins: typeof rating?.wins === 'number' ? rating.wins : 0,
   losses: typeof rating?.losses === 'number' ? rating.losses : 0,
+  draws: typeof rating?.draws === 'number' ? rating.draws : 0,
   ...(typeof rating?.lastDuelAt === 'number' ? { lastDuelAt: rating.lastDuelAt } : {})
 });
 
@@ -419,6 +421,7 @@ const mergeEloData = (
     const games = mergeScalar(localRating.games, foreignRating.games, mergeMode);
     const wins = mergeScalar(localRating.wins, foreignRating.wins, mergeMode);
     const losses = mergeScalar(localRating.losses, foreignRating.losses, mergeMode);
+    const draws = mergeScalar(localRating.draws ?? 0, foreignRating.draws ?? 0, mergeMode);
     const totalGamesWeight = localRating.games + foreignRating.games;
     // A song rated on both sides keeps the games-weighted mean of both ratings.
     const rating =
@@ -436,6 +439,7 @@ const mergeEloData = (
       games,
       wins,
       losses,
+      draws,
       ...(lastDuelAt > 0 ? { lastDuelAt } : {})
     };
   }

@@ -1,48 +1,49 @@
 import storage from './localStorage';
+import { MAX_PENDING_DUELS, normalizeDuelTickets } from './duelTickets';
 
-export const MAX_PENDING_DUELS = 100;
+export { MAX_PENDING_DUELS };
 
-/** Reads the persisted duel backlog, dropping malformed entries. */
-export const getDuelQueue = (): [string, string][] => {
-  const raw = storage.duels.getDuelsData('pendingDuelPairs');
-  if (!Array.isArray(raw)) return [];
-  return raw.filter(
-    (entry): entry is [string, string] =>
-      Array.isArray(entry) &&
-      entry.length === 2 &&
-      typeof entry[0] === 'string' &&
-      typeof entry[1] === 'string' &&
-      entry[0] !== entry[1]
-  );
+/** Reads tickets and migrates any legacy fixed pairs by preserving their A side. */
+export const getDuelTickets = (): DuelTicket[] => {
+  const rawTickets = storage.duels.getDuelsData('pendingDuelTickets');
+  const legacyPairs = storage.duels.getDuelsData('pendingDuelPairs');
+  const tickets = normalizeDuelTickets(rawTickets, legacyPairs);
+  if (Array.isArray(legacyPairs) && legacyPairs.length > 0) {
+    storage.duels.setDuelsData('pendingDuelTickets', tickets);
+    storage.duels.setDuelsData('pendingDuelPairs', []);
+  }
+  return tickets;
 };
 
-/** Persists the backlog and keeps the badge counter in sync with its length. */
-export const setDuelQueue = (queue: [string, string][]) => {
-  storage.duels.setDuelsData('pendingDuelPairs', queue);
-  storage.duels.setDuelsData('pendingDuels', queue.length);
+/** Persists a unique, bounded ticket queue and synchronizes the badge. */
+export const setDuelTickets = (tickets: DuelTicket[]) => {
+  const normalized = normalizeDuelTickets(tickets, []);
+  storage.duels.setDuelsData('pendingDuelTickets', normalized);
+  storage.duels.setDuelsData('pendingDuelPairs', []);
+  storage.duels.setDuelsData('pendingDuels', normalized.length);
 };
 
 /**
- * PEEKS the first backlog pair that still resolves to a playable duel,
- * dropping stale entries (deleted/blacklisted songs) along the way.
- * The alive pair is NOT shifted — consumption happens on vote/skip, so a
- * minimized or closed prompt keeps its pair queued. Null = nothing usable.
+ * Peeks the first ticket that can still produce a playable duel. The opponent
+ * is generated just in time; stale anchors are dropped, but transient IPC
+ * failures leave the queue untouched.
  */
 export const peekFirstAliveDuelPair = async (): Promise<DuelPair | null> => {
-  let queue = getDuelQueue();
-  while (queue.length > 0) {
-    const [songAId, songBId] = queue[0];
+  let tickets = getDuelTickets();
+  while (tickets.length > 0) {
     try {
-      const pair = await window.api.eloDuels.getDuelPairByIds(songAId, songBId);
+      const pair = await window.api.eloDuels.getDuelPair(tickets[0].anchorSongId);
       if (pair) {
-        setDuelQueue(queue);
+        setDuelTickets(tickets);
         return pair;
       }
     } catch (error) {
       console.error(error);
+      setDuelTickets(tickets);
+      return null;
     }
-    queue = queue.slice(1);
+    tickets = tickets.slice(1);
   }
-  setDuelQueue(queue);
+  setDuelTickets(tickets);
   return null;
 };

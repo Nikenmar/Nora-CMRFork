@@ -48,6 +48,7 @@ const DuelCard = (props: Props) => {
         <Img
           src={entry.artworkPaths.artworkPath}
           alt=""
+          enableImgFadeIns={false}
           className="h-40 w-40 rounded-lg object-cover shadow-md"
         />
         <button

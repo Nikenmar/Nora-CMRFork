@@ -4,7 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { AppUpdateContext } from '../../contexts/AppUpdateContext';
 import { store } from '@renderer/store';
 import { getPerceptualGain } from '../../other/player';
-import { getDuelQueue, peekFirstAliveDuelPair, setDuelQueue } from '../../utils/duelQueue';
+import { getDuelTickets, peekFirstAliveDuelPair, setDuelTickets } from '../../utils/duelQueue';
 
 import Button from '../Button';
 import DuelCard from './DuelCard';
@@ -17,6 +17,29 @@ type EloDuelPromptProps = {
   onClose?: () => void;
   onMinimize?: () => void;
 };
+
+const preloadArtwork = (src: string) =>
+  new Promise<void>((resolve) => {
+    let isSettled = false;
+    const image = new Image();
+    const finish = () => {
+      if (isSettled) return;
+      isSettled = true;
+      clearTimeout(timeout);
+      resolve();
+    };
+    const timeout = setTimeout(finish, 1500);
+    image.addEventListener('load', finish, { once: true });
+    image.addEventListener('error', finish, { once: true });
+    image.src = src;
+    if (image.complete) finish();
+  });
+
+const preloadPairArtwork = (pair: DuelPair) =>
+  Promise.all([
+    preloadArtwork(pair.songA.artworkPaths.artworkPath),
+    preloadArtwork(pair.songB.artworkPaths.artworkPath)
+  ]).then(() => pair);
 
 const EloDuelPrompt = (props: EloDuelPromptProps) => {
   const { changePromptMenuData, toggleSongPlayback } = useContext(AppUpdateContext);
@@ -109,17 +132,16 @@ const EloDuelPrompt = (props: EloDuelPromptProps) => {
   }, [onMinimize, stopPreview]);
 
   const consumeQueuedDuel = useCallback(() => {
-    const queue = getDuelQueue();
-    if (queue.length === 0) return;
-    const [songAId, songBId] = queue[0];
+    const tickets = getDuelTickets();
+    if (tickets.length === 0 || !pair.ticketAnchorSongId) return;
     // Only consume when the CURRENT pair is the queued one — a manual duel
     // played while the backlog grew must not eat someone else's pair.
-    if (songAId !== pair.songA.songId || songBId !== pair.songB.songId) return;
-    const nextQueue = queue.slice(1);
-    setDuelQueue(nextQueue);
-    remainingQueuedDuelsRef.current = nextQueue.length;
-    setRemainingQueuedDuels(nextQueue.length);
-  }, [pair.songA.songId, pair.songB.songId]);
+    if (tickets[0].anchorSongId !== pair.ticketAnchorSongId) return;
+    const nextTickets = tickets.slice(1);
+    setDuelTickets(nextTickets);
+    remainingQueuedDuelsRef.current = nextTickets.length;
+    setRemainingQueuedDuels(nextTickets.length);
+  }, [pair.ticketAnchorSongId]);
 
   const fetchNextPair = useCallback(
     (fallbackPhase: DuelPhase) => {
@@ -131,6 +153,7 @@ const EloDuelPrompt = (props: EloDuelPromptProps) => {
       // Next earned pair from the backlog first; fresh random pair when it's empty.
       peekFirstAliveDuelPair()
         .then((queuedPair) => queuedPair ?? window.api.eloDuels.getDuelPair())
+        .then((nextPair) => (nextPair ? preloadPairArtwork(nextPair) : nextPair))
         .then((nextPair) => {
           if (nextPair) {
             setPair(nextPair);
@@ -181,13 +204,21 @@ const EloDuelPrompt = (props: EloDuelPromptProps) => {
     [consumeQueuedDuel, fetchNextPair, phase, pair, stopPreview]
   );
 
-  const skipDuel = useCallback(() => {
-    if (phase !== 'voting' || actionLockedRef.current) return;
-    actionLockedRef.current = true;
-
-    consumeQueuedDuel();
-    fetchNextPair('voting');
-  }, [consumeQueuedDuel, fetchNextPair, phase]);
+  const skipDuel = useCallback(
+    (reason: DuelSkipReason) => {
+      if (phase !== 'voting' || actionLockedRef.current) return;
+      actionLockedRef.current = true;
+      stopPreview();
+      window.api.eloDuels
+        .recordDuelSkip(pair.songA.songId, pair.songB.songId, reason)
+        .finally(() => {
+          consumeQueuedDuel();
+          fetchNextPair('voting');
+        })
+        .catch((error) => console.error(error));
+    },
+    [consumeQueuedDuel, fetchNextPair, pair.songA.songId, pair.songB.songId, phase, stopPreview]
+  );
 
   const advanceAfterResult = useCallback(() => {
     if (phase !== 'result' || actionLockedRef.current) return;
@@ -243,13 +274,50 @@ const EloDuelPrompt = (props: EloDuelPromptProps) => {
       </div>
 
       <div className="buttons-container mt-8 flex min-h-10 items-center justify-center gap-4">
-        {phase === 'voting' && (
-          <Button
-            label={t('eloDuels.skipDuel')}
-            className="skip-duel-btn !bg-background-color-3 px-6 !text-font-color-black hover:border-background-color-3 dark:!bg-dark-background-color-3 dark:!text-font-color-black dark:hover:border-background-color-3"
-            clickHandler={skipDuel}
-          />
-        )}
+        <div
+          aria-hidden={phase === 'result'}
+          className={`flex flex-col items-center gap-2 transition-opacity duration-150 ${
+            phase === 'result'
+              ? 'pointer-events-none invisible'
+              : phase === 'submitting'
+                ? 'pointer-events-none opacity-50'
+                : ''
+          }`}
+        >
+          <span id="duel-skip-reason-label" className="text-xs opacity-65">
+            {t('eloDuels.skipReasonLabel')}
+          </span>
+          <div
+            role="group"
+            aria-labelledby="duel-skip-reason-label"
+            className="flex flex-wrap justify-center gap-2"
+          >
+            <Button
+              label={t('eloDuels.tooClose')}
+              iconName="balance"
+              tooltipLabel={t('eloDuels.tooCloseHint')}
+              isDisabled={phase !== 'voting'}
+              className="skip-duel-btn !m-0 min-h-11 !bg-background-color-3 px-4 !text-font-color-black hover:border-background-color-3 dark:!bg-dark-background-color-3 dark:!text-font-color-black dark:hover:border-background-color-3"
+              clickHandler={() => skipDuel('tooClose')}
+            />
+            <Button
+              label={t('eloDuels.tooDifferent')}
+              iconName="call_split"
+              tooltipLabel={t('eloDuels.tooDifferentHint')}
+              isDisabled={phase !== 'voting'}
+              className="skip-duel-btn !m-0 min-h-11 !bg-background-color-3 px-4 !text-font-color-black hover:border-background-color-3 dark:!bg-dark-background-color-3 dark:!text-font-color-black dark:hover:border-background-color-3"
+              clickHandler={() => skipDuel('tooDifferent')}
+            />
+            <Button
+              label={t('eloDuels.cantDecide')}
+              iconName="help_outline"
+              tooltipLabel={t('eloDuels.cantDecideHint')}
+              isDisabled={phase !== 'voting'}
+              className="skip-duel-btn !m-0 min-h-11 !bg-background-color-3 px-4 !text-font-color-black hover:border-background-color-3 dark:!bg-dark-background-color-3 dark:!text-font-color-black dark:hover:border-background-color-3"
+              clickHandler={() => skipDuel('cantDecide')}
+            />
+          </div>
+        </div>
         {phase === 'result' && showNextRetry && (
           <Button
             label={t('eloDuels.nextDuel')}

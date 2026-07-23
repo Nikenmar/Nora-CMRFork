@@ -467,9 +467,9 @@ export default function App() {
       dispatch({ type: 'TOGGLE_TIER_SHUFFLE_STATE', data: true });
       const intensity = preferences?.tierShuffleIntensity ?? 0.6;
       window.api.tierlistsData
-        .getMegaShuffleWeights([], intensity)
-        .then((w) => {
-          tierShuffleWeightsRef.current = w || {};
+        .getMegaShuffleData([], intensity)
+        .then((data) => {
+          tierShuffleDataRef.current = data;
           return undefined;
         })
         .catch((err) => console.error(err));
@@ -1204,14 +1204,33 @@ export default function App() {
   // Cached per-song weights for the Smart Shuffle, so building a fresh queue can
   // be weighted synchronously (just like the normal shuffle) — fixes the "play a
   // track and it goes linear" bug. Warmed whenever Smart Shuffle turns on.
-  const tierShuffleWeightsRef = useRef<Record<string, number>>({});
+  const tierShuffleDataRef = useRef<MegaShuffleData>({ weights: {}, pairFeedback: [] });
+
+  useEffect(() => {
+    const refreshDuelFeedback = (event: Event) => {
+      if (!('detail' in event) || !store.state.player.isTierShuffling) return;
+      const updates = (event as DetailAvailableEvent<DataUpdateEvent[]>).detail;
+      if (!updates.some(({ dataType }) => dataType === 'eloDuels')) return;
+      const intensity = storage.preferences.getPreferences('tierShuffleIntensity') ?? 0.6;
+      window.api.tierlistsData
+        .getMegaShuffleData([], intensity)
+        .then((data) => {
+          tierShuffleDataRef.current = data;
+          return undefined;
+        })
+        .catch((error) => console.error(error));
+    };
+
+    document.addEventListener('app/dataUpdates', refreshDuelFeedback);
+    return () => document.removeEventListener('app/dataUpdates', refreshDuelFeedback);
+  }, []);
 
   const shuffleQueue = useCallback(
     (songIds: string[], currentSongIndex?: number) => {
       // If Smart Shuffle is on, weight the order instead of pure random. Don't
       // flip the normal-shuffle flag here — the two modes are exclusive.
       if (store.state.player.isTierShuffling) {
-        return megaShuffleQueue(songIds, tierShuffleWeightsRef.current, currentSongIndex);
+        return megaShuffleQueue(songIds, tierShuffleDataRef.current, currentSongIndex);
       }
       toggleShuffling(true);
       return shuffleQueueRandomly(songIds, currentSongIndex);
@@ -1306,14 +1325,14 @@ export default function App() {
           }
           const intensity = storage.preferences.getPreferences('tierShuffleIntensity') ?? 0.6;
           // Weights for the WHOLE library, so later queue rebuilds stay smart too.
-          return window.api.tierlistsData.getMegaShuffleWeights([], intensity);
+          return window.api.tierlistsData.getMegaShuffleData([], intensity);
         })
-        .then((weights) => {
-          if (!weights) return; // aborted (no influencing tierlists)
-          tierShuffleWeightsRef.current = weights;
+        .then((data) => {
+          if (!data) return; // aborted (no influencing tierlists)
+          tierShuffleDataRef.current = data;
           const { shuffledQueue, positions } = megaShuffleQueue(
             baseQueue,
-            weights,
+            data,
             currentQueue.currentSongIndex ?? undefined
           );
           storage.queue.setQueue({

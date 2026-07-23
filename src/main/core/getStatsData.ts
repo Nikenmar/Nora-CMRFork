@@ -8,6 +8,7 @@ import {
 import { getSongArtworkPath } from '../fs/resolveFilePaths';
 import { isSongBlacklisted } from '../utils/isBlacklisted';
 import logger from '../logger';
+import { getEffectiveEloRating, getEloConfidence } from './duelMatchmaker';
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 
@@ -264,13 +265,16 @@ const getStatsData = (timeRange: StatsTimeRange): StatsData => {
       return {
         ...toSongEntry(song, listensBySongId.get(songId) ?? 0),
         rating: rating.rating,
+        effectiveRating: getEffectiveEloRating(rating),
+        isProvisional: getEloConfidence(rating) < 1,
         games: rating.games,
         wins: rating.wins,
-        losses: rating.losses
+        losses: rating.losses,
+        draws: rating.draws ?? 0
       };
     })
     .filter(isDefined)
-    .sort((a, b) => b.rating - a.rating || a.title.localeCompare(b.title))
+    .sort((a, b) => b.effectiveRating - a.effectiveRating || a.title.localeCompare(b.title))
     .slice(0, 10);
 
   const recentDuels = elo.history.slice(0, 10).map((duel) => ({

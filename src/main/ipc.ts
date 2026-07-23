@@ -51,11 +51,17 @@ import removePlaylists from './core/removePlaylists';
 import addNewPlaylist from './core/addNewPlaylist';
 import { addTierlist, removeTierlists, saveTierlist, sendTierlistData } from './core/tierlists';
 import getTierlistArtworks from './core/getTierlistArtworks';
-import getMegaShuffleWeights from './core/megaShuffle';
+import getMegaShuffleWeights, { getMegaShuffleData } from './core/megaShuffle';
 import getStatsData from './core/getStatsData';
 import exportStatsData from './core/statsTransfer/exportStats';
 import importStatsData from './core/statsTransfer/importStats';
-import { getDuelPair, getDuelPairByIds, submitDuelResult } from './core/eloDuels';
+import {
+  getDuelPair,
+  getDuelPairByIds,
+  recordDuelSkip,
+  selectDuelAnchorFromCandidates,
+  submitDuelResult
+} from './core/eloDuels';
 import getAllSongs from './core/getAllSongs';
 import toggleLikeArtists from './core/toggleLikeArtists';
 import fetchSongInfoFromLastFM from './core/fetchSongInfoFromLastFM';
@@ -381,6 +387,9 @@ export function initializeIPC(mainWindow: BrowserWindow, abortSignal: AbortSigna
     ipcMain.handle('app/getMegaShuffleWeights', (_, songIds: string[], intensity?: number) =>
       getMegaShuffleWeights(songIds, intensity)
     );
+    ipcMain.handle('app/getMegaShuffleData', (_, songIds: string[], intensity?: number) =>
+      getMegaShuffleData(songIds, intensity)
+    );
 
     // $ CMR STATS
     ipcMain.handle('app/getStatsData', (_, timeRange: StatsTimeRange) => getStatsData(timeRange));
@@ -396,9 +405,19 @@ export function initializeIPC(mainWindow: BrowserWindow, abortSignal: AbortSigna
     );
 
     ipcMain.handle('app/getDuelPair', (_, pinnedSongId?: string) => getDuelPair(pinnedSongId));
+    ipcMain.handle(
+      'app/selectDuelAnchor',
+      (_, candidates: DuelAnchorCandidate[], excludedSongIds?: string[]) =>
+        selectDuelAnchorFromCandidates(candidates, excludedSongIds)
+    );
 
     ipcMain.handle('app/getDuelPairByIds', (_, songAId: string, songBId: string) =>
       getDuelPairByIds(songAId, songBId)
+    );
+    ipcMain.handle(
+      'app/recordDuelSkip',
+      (_, songAId: string, songBId: string, reason?: DuelSkipReason) =>
+        recordDuelSkip(songAId, songBId, reason)
     );
 
     ipcMain.handle(

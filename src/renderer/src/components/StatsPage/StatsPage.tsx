@@ -364,8 +364,12 @@ const StatsPage = () => {
                           key={song.songId}
                           rank={index + 1}
                           entry={song}
-                          count={Math.round(song.rating)}
-                          details={`${song.wins}W · ${song.losses}L · ${song.games}g`}
+                          count={Math.round(song.effectiveRating)}
+                          details={`${song.wins}W · ${song.losses}L${
+                            song.draws > 0 ? ` · ${song.draws}D` : ''
+                          } · ${song.games}g${
+                            song.isProvisional ? ` · ${t('eloDuels.provisional')}` : ''
+                          }`}
                           onTitleClick={openSongInfoPage}
                         />
                       ))}
@@ -381,11 +385,19 @@ const StatsPage = () => {
                           title={new Date(duel.at).toLocaleString()}
                         >
                           <span className="min-w-0 truncate">
-                            <span className={duel.winner === 'A' ? 'font-semibold' : ''}>
+                            <span
+                              className={
+                                duel.winner === 'A' || duel.winner === 'draw' ? 'font-semibold' : ''
+                              }
+                            >
                               {duel.titleA}
                             </span>
                             <span className="opacity-60"> vs </span>
-                            <span className={duel.winner === 'B' ? 'font-semibold' : ''}>
+                            <span
+                              className={
+                                duel.winner === 'B' || duel.winner === 'draw' ? 'font-semibold' : ''
+                              }
+                            >
                               {duel.titleB}
                             </span>
                           </span>

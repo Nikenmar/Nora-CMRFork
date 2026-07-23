@@ -487,6 +487,8 @@ export const LOCAL_STORAGE_DEFAULT_TEMPLATE: LocalStorage = {
     lastInviteAt: 0,
     listensSinceInvite: 0,
     pendingDuels: 0,
+    pendingDuelTickets: [],
+    duelAnchorCandidates: [],
     pendingDuelPairs: []
   }
 };

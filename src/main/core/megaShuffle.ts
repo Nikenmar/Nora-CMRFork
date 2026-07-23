@@ -6,10 +6,12 @@ import {
   getTierlistData
 } from '../filesystem';
 import logger from '../logger';
+import { getNormalizedEloScore } from './duelMatchmaker';
 
 // How hard the most-recently-played track is pushed back (its weight ×0.4),
 // decaying linearly to ~no penalty for the oldest entry in the History list.
 const FRESHNESS_PENALTY = 0.6;
+const PAIR_FEEDBACK_MAX_AGE = 180 * 24 * 60 * 60 * 1000;
 
 /**
  * "Mega Smart Shuffle" / Tierlist Value Shuffle weights.
@@ -25,7 +27,7 @@ const FRESHNESS_PENALTY = 0.6;
  *    tracks are ranked (sum of tier values), plus how much they're listened to.
  *    Computed across the WHOLE library, so a track that ISN'T in any tierlist
  *    still gets lifted purely because it's by one of your top artists.
- *  - eloScore — ELO duel rating, min-max normalized across rated songs. Only
+ *  - eloScore — confidence-adjusted ELO on a fixed scale around 1200. Only
  *    active once totalDuels >= 10 (below that the signal is noise); unrated
  *    songs get a NEUTRAL 0.5 — absence of duels must not punish a song
  *    (unlike tiers, where unranked = 0 is intentional).
@@ -117,20 +119,11 @@ const getMegaShuffleWeights = (songIds: string[] = [], intensity = 0.6): Record<
     // ----- ELO score (4th signal; only once enough duels exist to be meaningful) -----
     const elo = getCmrStatsData().elo;
     const hasEloData = elo.totalDuels >= 10;
-    let eloMin = 0;
-    let eloMax = 0;
-    if (hasEloData) {
-      const ratedRatings = Object.values(elo.ratings)
-        .filter((r) => r.games >= 1)
-        .map((r) => r.rating);
-      eloMin = Math.min(...ratedRatings);
-      eloMax = Math.max(...ratedRatings);
-    }
     const eloScore = (songId: string) => {
       const rating = elo.ratings[songId];
-      // unrated => neutral 0.5; degenerate range (all equal) => 0.5 for everyone.
-      if (!rating || rating.games < 1 || eloMax <= eloMin) return 0.5;
-      return (rating.rating - eloMin) / (eloMax - eloMin);
+      // Unrated remains neutral; provisional ratings stay close to neutral.
+      if (!rating || rating.games < 1) return 0.5;
+      return getNormalizedEloScore(rating);
     };
 
     // ----- weight for each requested song -----
@@ -166,6 +159,17 @@ const getMegaShuffleWeights = (songIds: string[] = [], intensity = 0.6): Record<
     logger.error('Failed to compute Mega Smart Shuffle weights.', { error });
     return weights;
   }
+};
+
+export const getMegaShuffleData = (songIds: string[] = [], intensity = 0.6): MegaShuffleData => {
+  const cmrStats = getCmrStatsData();
+  const now = Date.now();
+  return {
+    weights: getMegaShuffleWeights(songIds, intensity),
+    pairFeedback: (cmrStats.duelMatchmaking?.skippedPairs ?? [])
+      .filter(({ at, reason }) => reason === 'tooDifferent' && now - at <= PAIR_FEEDBACK_MAX_AGE)
+      .slice(0, 100)
+  };
 };
 
 export default getMegaShuffleWeights;

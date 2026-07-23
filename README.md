@@ -2,7 +2,7 @@
 
 My personal fork of [Nora](https://github.com/Sandakan/Nora).
 
-It started as a one-line fix for a crash and grew from there. The fork still sits on Nora `v3.1.0`, but by now it has a proper set of additions on top: a built-in tier-list maker, a smart shuffle that actually uses your rankings, portable listening stats with an activity calendar, ELO song duels, a Rediscover playlist for music you forgot you loved, and a handful of fixes I wanted out of the player.
+It started as a one-line fix for a crash and grew from there. The fork is based on Nora `v3.1.0`, but by now it has a proper set of additions on top: a built-in tier-list maker, a smart shuffle that actually uses your rankings, portable listening stats with an activity calendar, ELO song duels, a Rediscover playlist for music you forgot you loved, and a handful of fixes I wanted out of the player.
 
 ---
 
@@ -95,9 +95,11 @@ Being derived data, it does not travel in the portable stats export - it is rebu
 
 ## ELO duels
 
-The **Duel** button above Settings is always there when you want it: two songs from your listening history side by side, pick the one you like more, and the next duel follows automatically. Standard ELO math - everyone starts at 1200, K=32. Cards have hover preview buttons that play a snippet of the song without touching your queue or the main player.
+The **Duel** button above Settings is always there when you want it: two eligible library songs side by side, pick the one you like more, and the next duel follows automatically. Standard ELO math - everyone starts at 1200, K=32. Early ratings are confidence-adjusted until a song has five results, so a single lucky win does not distort Smart Shuffle or Rediscover. Cards have hover preview buttons that play a snippet without touching your queue or the main player.
 
-Nora can also build up a small duel backlog as you listen: every earned duel is generated the moment you finish a track and that track is pinned as one of the contenders - so the backlog is always about the music you have actually been hearing lately. The frequency is configurable in Settings (only full 90%+ listens count towards it - a skip never earns anything), the queue persists across restarts, and it is capped at 100. The duel window can be minimized without losing the current pair or the rest of the batch.
+Nora can also build up a small duel backlog as you listen. Only full 90%+ listens count; after 2 / 5 / 10 full listens (frequent / normal / rare), the most useful recent track becomes an anchor ticket. Its opponent is generated only when the duel opens, using current ELO confidence, recent match history, playlist / tier-list / genre context, and skip feedback. The persistent queue is capped at 30 unique anchors. The duel window can be minimized without losing the current comparison or the rest of the batch.
+
+If a comparison is not a clean win, use **Too close**, **Too different**, or **Can't decide**. Too close records an ELO draw; the other two leave ratings unchanged. Each reason gives that pair an appropriate cooldown, and Too different also teaches Smart Shuffle not to place those tracks next to each other.
 
 Your top-rated songs and recent duels live on the Stats tab from the very first result. And once you've done ten or so duels, the Smart Shuffle starts using your ratings as a fourth signal - songs that have never dueled stay neutral, so not playing along never hurts a track.
 
