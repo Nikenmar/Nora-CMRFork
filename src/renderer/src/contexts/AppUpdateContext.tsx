@@ -61,7 +61,6 @@ export interface AppUpdateContextType {
     addSelections?: string[],
     replaceSelections?: boolean
   ) => void;
-  updateAppUpdatesState: (state: AppUpdatesState) => void;
 }
 
 export const AppUpdateContext = createContext({} as AppUpdateContextType);

@@ -41,8 +41,6 @@ export interface AppStateContextType {
   isMultipleSelectionEnabled: boolean;
   // MINI PLAYER
   // isMiniPlayer: boolean;
-  // APP UPDATES DATA
-  appUpdatesState: AppUpdatesState;
   // OTHER
   bodyBackgroundImage?: string;
   isPlayerStalled: boolean;

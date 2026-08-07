@@ -14,14 +14,13 @@ import { useStore } from '@tanstack/react-store';
 import { Trans, useTranslation } from 'react-i18next';
 import './assets/styles/styles.css';
 import 'material-symbols/rounded.css';
-import { releaseNotes, version, appPreferences } from '../../../package.json';
+import { appPreferences } from '../../../package.json';
 
 // ? CONTEXTS
 import { AppUpdateContext, type AppUpdateContextType } from './contexts/AppUpdateContext';
 // import { SongPositionContext } from './contexts/SongPositionContext';
 
 // ? HOOKS
-import useNetworkConnectivity from './hooks/useNetworkConnectivity';
 import useDuelInvite from './hooks/useDuelInvite';
 
 // ? MAIN APP COMPONENTS
@@ -38,7 +37,6 @@ import toggleSongIsFavorite from './other/toggleSongIsFavorite';
 import SuspenseLoader from './components/SuspenseLoader';
 
 // ? PROMPTS
-const ReleaseNotesPrompt = lazy(() => import('./components/ReleaseNotesPrompt/ReleaseNotesPrompt'));
 const UnsupportedFileMessagePrompt = lazy(
   () => import('./components/UnsupportedFileMessagePrompt')
 );
@@ -50,7 +48,6 @@ const MiniPlayer = lazy(() => import('./components/MiniPlayer/MiniPlayer'));
 const FullScreenPlayer = lazy(() => import('./components/FullScreenPlayer/FullScreenPlayer'));
 
 // ? UTILS
-import isLatestVersion from './utils/isLatestVersion';
 import roundTo from '../../common/roundTo';
 import storage from './utils/localStorage';
 import { isDataChanged } from './utils/hasDataChanged';
@@ -113,8 +110,6 @@ export default function App() {
 
   const [, startTransition] = useTransition();
   const refStartPlay = useRef(false);
-
-  const { isOnline } = useNetworkConnectivity();
 
   const addSongDropPlaceholder = useCallback((e: DragEvent<HTMLDivElement>) => {
     e.preventDefault();
@@ -212,72 +207,9 @@ export default function App() {
     storage.playback.setPlaybackOptions('isTierShuffling', store.state.player.isTierShuffling);
   }, []);
 
-  const updateAppUpdatesState = useCallback((state: AppUpdatesState) => {
-    store.setState((prevData) => {
-      return {
-        ...prevData,
-        appUpdatesState: state
-      };
-    });
-  }, []);
-
-  const checkForAppUpdates = useCallback(() => {
-    if (navigator.onLine) {
-      updateAppUpdatesState('CHECKING');
-
-      fetch(releaseNotes.json)
-        .then((res) => {
-          if (res.status === 200) return res.json();
-          throw new Error('response status is not 200');
-        })
-        .then((res: Changelog) => {
-          const isThereAnAppUpdate = !isLatestVersion(res.latestVersion.version, version);
-
-          updateAppUpdatesState(isThereAnAppUpdate ? 'OLD' : 'LATEST');
-
-          if (isThereAnAppUpdate) {
-            const noUpdateNotificationForNewUpdate = storage.preferences.getPreferences(
-              'noUpdateNotificationForNewUpdate'
-            );
-            const isUpdateIgnored = noUpdateNotificationForNewUpdate !== res.latestVersion.version;
-            log('client has new updates', {
-              isThereAnAppUpdate,
-              noUpdateNotificationForNewUpdate,
-              isUpdateIgnored
-            });
-
-            if (isUpdateIgnored) {
-              changePromptMenuData(true, <ReleaseNotesPrompt />, 'release-notes px-8 py-4');
-            }
-          } else console.log('client is up-to-date.');
-
-          return undefined;
-        })
-        .catch((err) => {
-          console.error(err);
-          return updateAppUpdatesState('ERROR');
-        });
-    } else {
-      updateAppUpdatesState('NO_NETWORK_CONNECTION');
-
-      console.log(`couldn't check for app updates. Check the network connection.`);
-    }
-  }, [changePromptMenuData, updateAppUpdatesState]);
-
-  useEffect(
-    () => {
-      // check for app updates on app startup after 5 seconds.
-      const timeoutId = setTimeout(checkForAppUpdates, 5000);
-      // checks for app updates every 10 minutes.
-      const intervalId = setInterval(checkForAppUpdates, 1000 * 60 * 15);
-      return () => {
-        clearTimeout(timeoutId);
-        clearInterval(intervalId);
-      };
-    },
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [isOnline]
-  );
+  // The stock upstream update check (which polled Sandakan/Nora's
+  // release-notes.json) was removed: upstream no longer publishes that file, and
+  // the fork updates itself through electron-updater in src/main/update.ts.
 
   useEffect(() => {
     const watchForSystemThemeChanges = (
@@ -1999,7 +1931,6 @@ export default function App() {
       updateBodyBackgroundImage,
       updateMultipleSelections,
       toggleMultipleSelections,
-      updateAppUpdatesState,
       updateEqualizerOptions
     }),
     [
@@ -2034,7 +1965,6 @@ export default function App() {
       updateBodyBackgroundImage,
       updateMultipleSelections,
       toggleMultipleSelections,
-      updateAppUpdatesState,
       updateEqualizerOptions
     ]
   );

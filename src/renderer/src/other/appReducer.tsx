@@ -22,7 +22,6 @@ export interface AppReducer {
   player: Player;
   bodyBackgroundImage?: string;
   multipleSelectionsData: MultipleSelectionData;
-  appUpdatesState: AppUpdatesState;
   isOnBatteryPower: boolean;
   playerType: PlayerTypes;
 }
@@ -63,7 +62,6 @@ export type AppReducerStateActions =
   | { type: 'PLAYER_WAITING_STATUS'; data: boolean }
   | { type: 'UPDATE_BODY_BACKGROUND_IMAGE'; data?: string }
   | { type: 'UPDATE_MULTIPLE_SELECTIONS_DATA'; data: MultipleSelectionData }
-  | { type: 'CHANGE_APP_UPDATES_DATA'; data: AppUpdatesState }
   | { type: 'UPDATE_LOCAL_STORAGE'; data: LocalStorage }
   | { type: 'UPDATE_BATTERY_POWER_STATE'; data: boolean }
   | { type: 'TOGGLE_SHOW_SONG_REMAINING_DURATION'; data?: boolean }
@@ -371,11 +369,6 @@ export const reducer = (state: AppReducer, action: AppReducerStateActions): AppR
         ...state,
         multipleSelectionsData: action.data ?? state.multipleSelectionsData
       };
-    case 'CHANGE_APP_UPDATES_DATA':
-      return {
-        ...state,
-        appUpdatesState: action.data ?? state.appUpdatesState
-      };
     case 'PLAYER_WAITING_STATUS':
       return {
         ...state,
@@ -572,7 +565,6 @@ export const DEFAULT_REDUCER_DATA: AppReducer = {
     noOfPrompts: 0
   },
   multipleSelectionsData: { isEnabled: false, multipleSelections: [] },
-  appUpdatesState: 'UNKNOWN',
   isOnBatteryPower: false
 };
 

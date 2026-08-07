@@ -413,14 +413,6 @@ declare global {
     | 'storageMetrics'
     | PageSortTypes;
 
-  type AppUpdatesState =
-    | 'UNKNOWN'
-    | 'CHECKING'
-    | 'LATEST'
-    | 'OLD'
-    | 'ERROR'
-    | 'NO_NETWORK_CONNECTION';
-
   interface Blacklist {
     songBlacklist: string[];
     folderBlacklist: string[];

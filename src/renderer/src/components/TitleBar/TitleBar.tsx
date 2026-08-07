@@ -5,7 +5,6 @@ import { version } from '../../../../../package.json';
 
 import Img from '../Img';
 import NetworkIndicator from './indicators/NetworkIndicator';
-import NewUpdateIndicator from './indicators/NewUpdateIndicator';
 import ChangeThemeBtn from './special_controls/ChangeThemeBtn';
 import NavigationControlsContainer from './NavigationControlsContainer';
 import WindowControlsContainer from './WindowControlsContainer';
@@ -58,7 +57,6 @@ const TitleBar = memo(() => {
         <div className="special-controls-and-indicators-container mr-2 flex items-center justify-between py-1">
           <div className="indicators-container flex flex-row">
             {/* <ThrottlingIndicator /> */}
-            <NewUpdateIndicator />
             <NetworkIndicator />
           </div>
           <div className="special-controls-container flex flex-row">
