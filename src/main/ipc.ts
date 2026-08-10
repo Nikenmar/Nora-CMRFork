@@ -62,6 +62,11 @@ import {
   selectDuelAnchorFromCandidates,
   submitDuelResult
 } from './core/eloDuels';
+import {
+  getSongGuessrPools,
+  getSongGuessrRound,
+  searchSongGuessrCandidates
+} from './core/songGuessr';
 import getAllSongs from './core/getAllSongs';
 import toggleLikeArtists from './core/toggleLikeArtists';
 import fetchSongInfoFromLastFM from './core/fetchSongInfoFromLastFM';
@@ -403,6 +408,14 @@ export function initializeIPC(mainWindow: BrowserWindow, abortSignal: AbortSigna
       (_, mergeMode: StatsMergeMode, source: StatsImportSource) =>
         importStatsData(mergeMode, source)
     );
+
+    ipcMain.handle('app/getSongGuessrRound', (_, options: SongGuessrRoundOptions) =>
+      getSongGuessrRound(options)
+    );
+    ipcMain.handle('app/searchSongGuessrCandidates', (_, query: string, limit?: number) =>
+      searchSongGuessrCandidates(query, limit)
+    );
+    ipcMain.handle('app/getSongGuessrPools', () => getSongGuessrPools());
 
     ipcMain.handle('app/getDuelPair', (_, pinnedSongId?: string) => getDuelPair(pinnedSongId));
     ipcMain.handle(

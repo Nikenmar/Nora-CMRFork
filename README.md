@@ -103,6 +103,16 @@ If a comparison is not a clean win, use **Too close**, **Too different**, or **C
 
 Your top-rated songs and recent duels live on the Stats tab from the very first result. And once you've done ten or so duels, the Smart Shuffle starts using your ratings as a fourth signal - songs that have never dueled stay neutral, so not playing along never hurts a track.
 
+## SongGuessr
+
+I put **SongGuessr** above **Duel** so I can press it and get a track from my own library. It starts with the first 0.1 seconds and an autocomplete over the library. A wrong guess or a skip costs one of six attempts and unlocks a longer snippet - 0.1 / 0.5 / 1 / 3 / 6 / 12 seconds, always from the start. Guess the right track and the round is yours; use all six attempts and the answer is revealed either way with its cover art. I can copy a spoiler-free emoji result or play the track in Nora.
+
+Plenty of my files open with a few seconds of nothing - room tone, tape hiss, a slow fade-in - and on a 0.1 second snippet that is the whole clue wasted. So the snippet starts where the music does. The track is measured against its own loudness rather than a fixed threshold, which is what catches the quiet-but-not-empty openings, and a lone click or crackle at 0:00 is not mistaken for the song starting.
+
+I can choose the whole library, a playlist, or a genre as the pool. Pools need at least 10 eligible songs, and tracks shorter than 15 seconds never appear. It keeps games played, win rate, current and best streak, plus a distribution of how many attempts my wins took. Recently used answers are avoided when there are enough alternatives, so rounds do not repeat quite so often.
+
+It is a local game over my own files - no daily puzzle, no server, and nothing leaves the machine.
+
 ## Sticky selection
 
 Multi-select no longer evaporates when you switch tabs or finish an action. Select songs, wander around the app, then do the thing. It clears with **Esc**, the **Unselect** button in the top bar, or actions that actually remove the selected items - and it never mixes songs with playlists.

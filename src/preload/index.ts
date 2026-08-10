@@ -443,6 +443,15 @@ const eloDuels = {
     ipcRenderer.invoke('app/submitDuelResult', songAId, songBId, winnerSongId)
 };
 
+// $ SONGGUESSR
+const songGuessr = {
+  getRound: (options: SongGuessrRoundOptions): Promise<SongGuessrRound | null> =>
+    ipcRenderer.invoke('app/getSongGuessrRound', options),
+  searchCandidates: (query: string, limit?: number): Promise<SongGuessrCandidate[]> =>
+    ipcRenderer.invoke('app/searchSongGuessrCandidates', query, limit),
+  getPools: (): Promise<SongGuessrPoolOption[]> => ipcRenderer.invoke('app/getSongGuessrPools')
+};
+
 // $ APP LOGS
 const log = {
   sendLogs: (
@@ -551,6 +560,7 @@ export const api = {
   tierlistsData,
   statsData,
   eloDuels,
+  songGuessr,
   log,
   miniPlayer,
   settingsHelpers,

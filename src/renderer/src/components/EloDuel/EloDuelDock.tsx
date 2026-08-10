@@ -69,7 +69,9 @@ const EloDuelDock = () => {
 
   return (
     <>
-      <li className="mt-auto flex min-h-0 w-full flex-shrink-0 items-center pl-2">
+      {/* The bottom-pinning `mt-auto` now sits on the SongGuessr dock above;
+          two auto margins would split the free space and separate the pair. */}
+      <li className="flex min-h-0 w-full flex-shrink-0 items-center pl-2">
         {showDock && (
           <button
             type="button"

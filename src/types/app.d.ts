@@ -66,7 +66,10 @@ declare global {
     | 'app/player/skipForward'
     | 'app/player/skipBackward'
     | 'app/player/toggleSongPlaybackState'
-    | 'app/player/skipBackward';
+    | 'app/player/skipBackward'
+    | 'app/getSongGuessrRound'
+    | 'app/searchSongGuessrCandidates'
+    | 'app/getSongGuessrPools';
 
   interface ImageCoverData {
     format: string;

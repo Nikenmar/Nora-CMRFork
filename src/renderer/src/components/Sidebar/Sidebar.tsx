@@ -5,6 +5,7 @@ import { useTranslation } from 'react-i18next';
 import ErrorBoundary from '../ErrorBoundary';
 import SideBarItem from './SideBarItem';
 import EloDuelDock from '../EloDuel/EloDuelDock';
+import SongGuessrDock from '../SongGuessr/SongGuessrDock';
 import { useStore } from '@tanstack/react-store';
 import { store } from '@renderer/store';
 
@@ -145,7 +146,12 @@ const Sidebar = memo(() => {
       data
         ? data.map((link) => (
             <Fragment key={link.id}>
-              {link.id === 'Settings' && <EloDuelDock />}
+              {link.id === 'Settings' && (
+                <>
+                  <SongGuessrDock />
+                  <EloDuelDock />
+                </>
+              )}
               <SideBarItem
                 id={link.id}
                 parentClassName={link.parentClassName}
