@@ -201,9 +201,13 @@ body * {
 }
 
 /* ? APP DARK THEME STYLES */
+/* `dialog.dark` covers panels portalled to document.body: they render outside
+   `.App`, so without their own scope every var-driven rule (seekbar, sliders,
+   scrollbars) would resolve against the light palette in dark mode. */
 .App.dark,
 .full-screen-player.dark,
-.mini-player.dark {
+.mini-player.dark,
+dialog.dark {
   --background-color-1: var(--dark-background-color-1);
   --background-color-2: var(--dark-background-color-2);
   --background-color-3: var(--dark-background-color-3);

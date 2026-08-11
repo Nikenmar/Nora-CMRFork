@@ -12,11 +12,10 @@ type Props = {
   playlists: Playlist[];
   searchInput: string;
   noOfVisiblePlaylists?: number;
-  isPredictiveSearchEnabled: boolean;
 };
 
 const PlaylistSearchResultsContainer = (props: Props) => {
-  const { playlists, searchInput, noOfVisiblePlaylists = 4, isPredictiveSearchEnabled } = props;
+  const { playlists, searchInput, noOfVisiblePlaylists = 4 } = props;
   const multipleSelectionsData = useStore(store, (state) => state.multipleSelectionsData);
   const isMultipleSelectionEnabled = useStore(
     store,
@@ -118,8 +117,7 @@ const PlaylistSearchResultsContainer = (props: Props) => {
                   changeCurrentActivePage('AllSearchResults', {
                     searchQuery: searchInput,
                     searchFilter: 'Playlists' as SearchFilters,
-                    searchResults: playlists,
-                    isPredictiveSearchEnabled
+                    searchResults: playlists
                   })
                 }
               />

@@ -7,6 +7,7 @@ import { store } from '@renderer/store';
 import i18n from '../../i18n';
 import { valueRounder } from '../../utils/valueRounder';
 import storage from '../../utils/localStorage';
+import { loadSongGuessrState } from '../../utils/songGuessr/persistence';
 
 import Dropdown, { type DropdownOption } from '../Dropdown';
 import MainContainer from '../MainContainer';
@@ -17,6 +18,7 @@ import ActivityBarGraph from './ActivityBarGraph';
 import ActivityCalendar from './ActivityCalendar';
 import TopSongRow from './TopSongRow';
 import TopNameRow from './TopNameRow';
+import SongGuessrStatsSection from './SongGuessrStatsSection';
 
 import NoStatsImage from '../../assets/images/svg/Summer landscape_Monochromatic.svg';
 
@@ -57,7 +59,21 @@ const StatsPage = () => {
     () => (currentlyActivePage.data?.statsTimeRange as StatsTimeRange | undefined) ?? 'allTime'
   );
   const [stats, setStats] = useState<StatsData>();
+  /*
+    SongGuessr keeps its own isolated localStorage key and never joins the
+    library stores, so this is a plain read alongside the IPC stats rather than
+    part of StatsData — nothing here can touch listening data or ELO saves.
+    Re-read whenever the page becomes active again; rounds are played in the
+    dialog, which emits no `app/dataUpdates` event.
+  */
+  const [songGuessrStats, setSongGuessrStats] = useState<SongGuessrStats>(
+    () => loadSongGuessrState().stats
+  );
   const statsRequestIdRef = useRef(0);
+
+  useEffect(() => {
+    setSongGuessrStats(loadSongGuessrState().stats);
+  }, [currentlyActivePage]);
 
   const fetchStats = useCallback(() => {
     const requestId = ++statsRequestIdRef.current;
@@ -181,7 +197,9 @@ const StatsPage = () => {
     );
   }, [stats]);
 
-  const hasData = !!stats && (stats.totals.totalListens > 0 || stats.elo.totalDuels > 0);
+  const hasData =
+    !!stats &&
+    (stats.totals.totalListens > 0 || stats.elo.totalDuels > 0 || songGuessrStats.gamesPlayed > 0);
 
   return (
     <MainContainer className="stats-page appear-from-bottom !h-full overflow-hidden !pb-0 text-font-color-black dark:text-font-color-white">
@@ -346,6 +364,10 @@ const StatsPage = () => {
                 </div>
               </section>
             </div>
+
+            {songGuessrStats.gamesPlayed > 0 && (
+              <SongGuessrStatsSection stats={songGuessrStats} onTitleClick={openSongInfoPage} />
+            )}
 
             {stats.elo.totalDuels > 0 && (
               <section className="mb-6">

@@ -506,7 +506,7 @@ declare global {
     enableArtworkFromSongCovers: boolean;
     shuffleArtworkFromSongCovers: boolean;
     removeAnimationsOnBatteryPower: boolean;
-    isPredictiveSearchEnabled: boolean;
+
     lyricsAutomaticallySaveState: AutomaticallySaveLyricsTypes;
     showTrackNumberAsSongIndex: boolean;
     allowToPreventScreenSleeping: boolean;

@@ -54,10 +54,13 @@ const SongGuessrStatsPanel = ({ stats, highlightAttempt }: SongGuessrStatsPanelP
                   <div className="flex h-3 min-w-0 flex-1 items-center">
                     {count > 0 ? (
                       <div
+                        /* The seekbar tone, which is what Nora already fills a
+                           progress shape with — the highlight colour as a slab
+                           read as a stray tint against the rest of the app. */
                         className={`flex h-full min-w-[1.25rem] items-center justify-end rounded-[0.25rem] px-1.5 text-[0.6rem] font-semibold transition-all duration-500 ease-out motion-reduce:transition-none ${
                           isHighlighted
-                            ? 'bg-font-color-highlight text-background-color-1 dark:bg-dark-font-color-highlight dark:text-dark-background-color-1'
-                            : 'bg-font-color-highlight/30 dark:bg-dark-font-color-highlight/30'
+                            ? 'bg-seekbar-background-color text-background-color-1 dark:bg-dark-seekbar-background-color dark:text-dark-background-color-1'
+                            : 'bg-seekbar-background-color/35 dark:bg-dark-seekbar-background-color/35'
                         }`}
                         style={{ width: `${(count / peak) * 100}%` }}
                       >

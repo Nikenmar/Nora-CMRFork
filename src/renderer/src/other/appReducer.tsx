@@ -418,7 +418,7 @@ export const LOCAL_STORAGE_DEFAULT_TEMPLATE: LocalStorage = {
     enableArtworkFromSongCovers: false,
     shuffleArtworkFromSongCovers: false,
     removeAnimationsOnBatteryPower: false,
-    isPredictiveSearchEnabled: true,
+
     lyricsAutomaticallySaveState: 'NONE',
     showTrackNumberAsSongIndex: true,
     allowToPreventScreenSleeping: true,

@@ -1,4 +1,8 @@
-import { SONG_GUESSR_MAX_ATTEMPTS, SONG_GUESSR_STORAGE_KEY } from './constants';
+import {
+  SONG_GUESSR_MAX_ATTEMPTS,
+  SONG_GUESSR_RECENT_ROUNDS_CAP,
+  SONG_GUESSR_STORAGE_KEY
+} from './constants';
 import { createEmptyStats } from './stats';
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
@@ -27,6 +31,38 @@ const isValidStats = (value: unknown): value is SongGuessrStats => {
   );
 };
 
+const isRoundRecord = (value: unknown): value is SongGuessrRoundRecord =>
+  isRecord(value) &&
+  typeof value.at === 'number' &&
+  Number.isFinite(value.at) &&
+  value.at >= 0 &&
+  typeof value.won === 'boolean' &&
+  isNonNegativeInteger(value.attempts) &&
+  typeof value.songId === 'string' &&
+  typeof value.title === 'string' &&
+  Array.isArray(value.artists) &&
+  value.artists.every((artist) => typeof artist === 'string');
+
+/**
+ * A save written before the v3.4.2 counters is still valid — it just does not
+ * carry them. Filling defaults here (rather than rejecting the whole state)
+ * is what keeps an existing player's games, streaks and distribution intact.
+ */
+const normalizeStats = (stats: SongGuessrStats): SongGuessrStats => ({
+  ...stats,
+  distribution: [...stats.distribution],
+  skips: isNonNegativeInteger(stats.skips) ? stats.skips : 0,
+  firstPlayedAt:
+    typeof stats.firstPlayedAt === 'number' &&
+    Number.isFinite(stats.firstPlayedAt) &&
+    stats.firstPlayedAt >= 0
+      ? stats.firstPlayedAt
+      : 0,
+  recentRounds: Array.isArray(stats.recentRounds)
+    ? stats.recentRounds.filter(isRoundRecord).slice(0, SONG_GUESSR_RECENT_ROUNDS_CAP)
+    : []
+});
+
 const createEmptyState = (): SongGuessrPersistedState => ({
   version: 1,
   stats: createEmptyStats(),
@@ -54,10 +90,7 @@ export const loadSongGuessrState = (): SongGuessrPersistedState => {
     const poolType = isPoolType(parsed.poolType) ? parsed.poolType : 'library';
     const state: SongGuessrPersistedState = {
       version: 1,
-      stats: {
-        ...parsed.stats,
-        distribution: [...parsed.stats.distribution]
-      },
+      stats: normalizeStats(parsed.stats),
       poolType,
       recentSongIds
     };

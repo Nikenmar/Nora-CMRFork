@@ -11,11 +11,10 @@ type Props = {
   songs: SongData[];
   searchInput: string;
   noOfVisibleSongs?: number;
-  isPredictiveSearchEnabled: boolean;
 };
 
 const SongSearchResultsContainer = (props: Props) => {
-  const { searchInput, songs, noOfVisibleSongs = 5, isPredictiveSearchEnabled } = props;
+  const { searchInput, songs, noOfVisibleSongs = 5 } = props;
   const multipleSelectionsData = useStore(store, (state) => state.multipleSelectionsData);
   const isMultipleSelectionEnabled = useStore(
     store,
@@ -124,8 +123,7 @@ const SongSearchResultsContainer = (props: Props) => {
                   changeCurrentActivePage('AllSearchResults', {
                     searchQuery: searchInput,
                     searchFilter: 'Songs' as SearchFilters,
-                    searchResults: songs,
-                    isPredictiveSearchEnabled
+                    searchResults: songs
                   })
                 }
               />

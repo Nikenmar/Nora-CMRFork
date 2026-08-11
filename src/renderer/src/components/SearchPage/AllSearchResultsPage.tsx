@@ -17,7 +17,6 @@ import { store } from '@renderer/store';
 type AllSearchResultProp = {
   searchQuery: string;
   searchFilter: SearchFilters;
-  isPredictiveSearchEnabled: boolean;
 };
 
 const AllSearchResultsPage = () => {
@@ -52,7 +51,7 @@ const AllSearchResultsPage = () => {
   const fetchSearchResults = useCallback(() => {
     if (data.searchQuery.trim() !== '') {
       window.api.search
-        .search(data.searchFilter, data.searchQuery, false, data.isPredictiveSearchEnabled)
+        .search(data.searchFilter, data.searchQuery, false)
         .then((results) => {
           return setSearchResults(results);
         })

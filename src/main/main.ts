@@ -215,7 +215,14 @@ protocol.registerSchemesAsPrivileged([
       secure: true,
       supportFetchAPI: true,
       stream: true,
-      bypassCSP: true
+      bypassCSP: true,
+      /*
+       * SongGuessr routes its snippet element through a Web Audio gain node to
+       * fade the cuts, and Chromium silences that graph unless the media is
+       * CORS-clean. Only requests that ASK for CORS are affected: every image,
+       * audio and video element in the app keeps loading no-cors as before.
+       */
+      corsEnabled: true
     }
   }
 ]);
@@ -433,6 +440,18 @@ function addEventsToCache(dataType: DataUpdateEventTypes, data = [] as string[],
 //   }
 // }
 
+/*
+  Served on every local file so a CORS-mode request can read it: the renderer
+  is a different origin from `nora://`, and a media element asking for CORS
+  (SongGuessr, for its Web Audio fade) is refused outright without this. Range
+  is exposed because that is how the audio elements stream.
+*/
+const CORS_HEADERS: Record<string, string> = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'range',
+  'Access-Control-Expose-Headers': 'content-length, content-range, accept-ranges'
+};
+
 const handleFileProtocol = async (request: GlobalRequest): Promise<GlobalResponse> => {
   try {
     const urlWithQueries = decodeURI(request.url).replace(
@@ -477,7 +496,8 @@ const handleFileProtocol = async (request: GlobalRequest): Promise<GlobalRespons
         headers: {
           'Content-Type': mimeType,
           'Content-Length': buffer.length.toString(),
-          'Cache-Control': 'private, max-age=604800'
+          'Cache-Control': 'private, max-age=604800',
+          ...CORS_HEADERS
         }
       });
     }
@@ -487,7 +507,8 @@ const handleFileProtocol = async (request: GlobalRequest): Promise<GlobalRespons
       'Content-Type': mimeType,
       'Content-Range': `bytes ${start}-${end}/${fileStat.size}`,
       'Accept-Ranges': 'bytes',
-      'Content-Length': chunkSize.toString()
+      'Content-Length': chunkSize.toString(),
+      ...CORS_HEADERS
     };
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     return new Response(stream as any, {

@@ -49,6 +49,13 @@ interface SongGuessrCandidate {
   artworkPath?: string;
 }
 
+/** One page of the ranked matches for a guess-box query. */
+interface SongGuessrSearchResult {
+  candidates: SongGuessrCandidate[];
+  /** matches for the whole query, not just this page */
+  total: number;
+}
+
 type SongGuessrAttemptKind = 'skip' | 'wrong' | 'correct';
 
 interface SongGuessrAttempt {
@@ -57,6 +64,18 @@ interface SongGuessrAttempt {
   guessSongId?: string;
   /** what the user picked, as shown in the attempt list */
   guessLabel?: string;
+}
+
+/** One finished round, kept for the Stats page history. */
+interface SongGuessrRoundRecord {
+  /** epoch ms */
+  at: number;
+  won: boolean;
+  /** attempts spent, 1..SONG_GUESSR_MAX_ATTEMPTS */
+  attempts: number;
+  songId: string;
+  title: string;
+  artists: string[];
 }
 
 interface SongGuessrStats {
@@ -69,6 +88,19 @@ interface SongGuessrStats {
   distribution: number[];
   /** epoch ms, 0 when never played */
   lastPlayedAt: number;
+  /*
+   * Added in v3.4.2 — additive on an unchanged `version: 1`, exactly like the
+   * optional StatsTransfer blocks: an older build ignores what it does not
+   * know, and a save written before this carries defaults on load. Only facts
+   * that cannot be derived live here — total attempts is not one of them
+   * (wins come from `distribution`, a loss always spends the full ladder).
+   */
+  /** skips used across all rounds, 0 on saves written before v3.4.2 */
+  skips: number;
+  /** epoch ms of the first round ever, 0 when unknown */
+  firstPlayedAt: number;
+  /** newest first, capped — the window the Stats page history reads */
+  recentRounds: SongGuessrRoundRecord[];
 }
 
 /** Everything SongGuessr persists, in its own isolated localStorage key. */

@@ -202,13 +202,8 @@ export function initializeIPC(mainWindow: BrowserWindow, abortSignal: AbortSigna
 
     ipcMain.handle(
       'app/search',
-      (
-        _,
-        searchFilters: SearchFilters,
-        value: string,
-        updateSearchHistory?: boolean,
-        isPredictiveSearchEnabled?: boolean
-      ) => search(searchFilters, value, updateSearchHistory, isPredictiveSearchEnabled)
+      (_, searchFilters: SearchFilters, value: string, updateSearchHistory?: boolean) =>
+        search(searchFilters, value, updateSearchHistory)
     );
 
     ipcMain.handle(
@@ -412,8 +407,10 @@ export function initializeIPC(mainWindow: BrowserWindow, abortSignal: AbortSigna
     ipcMain.handle('app/getSongGuessrRound', (_, options: SongGuessrRoundOptions) =>
       getSongGuessrRound(options)
     );
-    ipcMain.handle('app/searchSongGuessrCandidates', (_, query: string, limit?: number) =>
-      searchSongGuessrCandidates(query, limit)
+    ipcMain.handle(
+      'app/searchSongGuessrCandidates',
+      (_, query: string, limit?: number, offset?: number) =>
+        searchSongGuessrCandidates(query, limit, offset)
     );
     ipcMain.handle('app/getSongGuessrPools', () => getSongGuessrPools());
 

@@ -3,7 +3,11 @@ import { useTranslation } from 'react-i18next';
 
 import { AppUpdateContext } from '../../contexts/AppUpdateContext';
 import { getTrackStartOffset } from '../../utils/songGuessr/audioAnalysis';
-import { SONG_GUESSR_MAX_ATTEMPTS, SONG_GUESSR_SNIPPETS } from '../../utils/songGuessr/constants';
+import {
+  SONG_GUESSR_MAX_ATTEMPTS,
+  SONG_GUESSR_PANEL_ATTRIBUTE,
+  SONG_GUESSR_SNIPPETS
+} from '../../utils/songGuessr/constants';
 import { isCorrectGuess, formatCandidateLabel } from '../../utils/songGuessr/matching';
 import {
   loadSongGuessrState,
@@ -145,7 +149,7 @@ const SongGuessrPrompt = ({ onClose, onMinimize }: SongGuessrPromptProps) => {
   }, [startRound]);
 
   const commitRoundResult = useCallback(
-    (won: boolean, attemptIndex: number) => {
+    (won: boolean, attemptIndex: number, roundAttempts: SongGuessrAttempt[]) => {
       if (!round || committedRoundRef.current) return;
       committedRoundRef.current = true;
 
@@ -153,7 +157,13 @@ const SongGuessrPrompt = ({ onClose, onMinimize }: SongGuessrPromptProps) => {
       const nextStats = applyRoundResult(currentState.stats, {
         won,
         attemptIndex,
-        at: Date.now()
+        at: Date.now(),
+        skips: roundAttempts.filter((attempt) => attempt.kind === 'skip').length,
+        answer: {
+          songId: round.answer.songId,
+          title: round.answer.title,
+          artists: round.answer.artists
+        }
       });
       const nextState = pushRecentSongId(
         { ...currentState, stats: nextStats },
@@ -175,7 +185,7 @@ const SongGuessrPrompt = ({ onClose, onMinimize }: SongGuessrPromptProps) => {
       setAttempts(nextAttempts);
 
       if (won || nextAttempts.length >= SONG_GUESSR_MAX_ATTEMPTS) {
-        commitRoundResult(won, nextAttempts.length - 1);
+        commitRoundResult(won, nextAttempts.length - 1, nextAttempts);
         setStopSignal((signal) => signal + 1);
         setPhase(won ? 'won' : 'lost');
         return;
@@ -310,7 +320,11 @@ const SongGuessrPrompt = ({ onClose, onMinimize }: SongGuessrPromptProps) => {
   return (
     <div
       ref={containerRef}
-      className="flex h-full min-h-0 w-full flex-col text-font-color-black dark:text-font-color-white"
+      /* Focusable only from script, and with no ring of its own: the dock parks
+         focus here when the panel opens before the guess box exists. */
+      tabIndex={-1}
+      {...{ [SONG_GUESSR_PANEL_ATTRIBUTE]: '' }}
+      className="flex h-full min-h-0 w-full flex-col text-font-color-black outline-none dark:text-font-color-white"
     >
       {/*
         Fixed height, and the streak sits inline as a chip rather than on a

@@ -97,12 +97,18 @@ const SongGuessrResult = (props: SongGuessrResultProps) => {
         </div>
 
         <div className="mt-4 flex flex-wrap items-center justify-center gap-2">
+          {/* Nora never fills a control with the highlight colour — it borders
+              the surface and lets the accent live in the icon. The primary
+              action is set apart by a highlight border, not a slab of it. */}
           <button
             type="button"
             onClick={onNextRound}
-            className="flex h-10 items-center gap-1.5 rounded-xl bg-font-color-highlight px-5 text-sm font-semibold text-background-color-1 transition-transform duration-200 ease-out hover:-translate-y-0.5 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-font-color-highlight-2 active:translate-y-0 motion-reduce:transition-none dark:bg-dark-font-color-highlight dark:text-dark-background-color-1"
+            className="flex h-10 items-center gap-1.5 rounded-xl border-[3px] border-font-color-highlight/60 bg-background-color-2/25 px-5 text-sm font-medium transition-[border-color,background-color] duration-200 ease-in-out hover:border-font-color-highlight hover:bg-background-color-2/50 focus-visible:!border-font-color-highlight-2 motion-reduce:transition-none dark:border-dark-font-color-highlight/60 dark:bg-dark-background-color-2/25 dark:hover:border-dark-font-color-highlight dark:hover:bg-dark-background-color-2/50 dark:focus-visible:!border-dark-font-color-highlight-2"
           >
-            <span className="material-icons-round text-base !leading-none" aria-hidden="true">
+            <span
+              className="material-icons-round text-base !leading-none text-font-color-highlight dark:text-dark-font-color-highlight"
+              aria-hidden="true"
+            >
               refresh
             </span>
             {t('songGuessr.nextRound')}
@@ -111,7 +117,7 @@ const SongGuessrResult = (props: SongGuessrResultProps) => {
           <button
             type="button"
             onClick={onPlayInNora}
-            className="flex h-10 items-center gap-1.5 rounded-xl bg-background-color-2/80 px-4 text-sm font-medium transition-colors duration-200 hover:bg-background-color-3 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-font-color-highlight-2 motion-reduce:transition-none dark:bg-dark-background-color-2/80 dark:hover:bg-dark-background-color-3/15"
+            className="flex h-10 items-center gap-1.5 rounded-xl border-[3px] border-background-color-2 bg-background-color-2/25 px-4 text-sm font-medium transition-[border-color,background-color] duration-200 ease-in-out hover:border-background-color-3 hover:bg-background-color-2/50 focus-visible:!border-font-color-highlight-2 motion-reduce:transition-none dark:border-dark-background-color-2 dark:bg-dark-background-color-2/25 dark:hover:border-dark-background-color-3 dark:hover:bg-dark-background-color-2/50 dark:focus-visible:!border-dark-font-color-highlight-2"
           >
             <span className="material-icons-round text-base !leading-none" aria-hidden="true">
               play_arrow
@@ -122,7 +128,7 @@ const SongGuessrResult = (props: SongGuessrResultProps) => {
           <button
             type="button"
             onClick={onCopy}
-            className="flex h-10 items-center gap-1.5 rounded-xl bg-background-color-2/80 px-4 text-sm font-medium transition-colors duration-200 hover:bg-background-color-3 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-font-color-highlight-2 motion-reduce:transition-none dark:bg-dark-background-color-2/80 dark:hover:bg-dark-background-color-3/15"
+            className="flex h-10 items-center gap-1.5 rounded-xl border-[3px] border-background-color-2 bg-background-color-2/25 px-4 text-sm font-medium transition-[border-color,background-color] duration-200 ease-in-out hover:border-background-color-3 hover:bg-background-color-2/50 focus-visible:!border-font-color-highlight-2 motion-reduce:transition-none dark:border-dark-background-color-2 dark:bg-dark-background-color-2/25 dark:hover:border-dark-background-color-3 dark:hover:bg-dark-background-color-2/50 dark:focus-visible:!border-dark-font-color-highlight-2"
           >
             <span
               className={`material-icons-round text-base !leading-none ${

@@ -186,10 +186,9 @@ const search = {
   search: (
     filter: SearchFilters,
     value: string,
-    updateSearchHistory?: boolean,
-    isPredictiveSearchEnabled?: boolean
+    updateSearchHistory?: boolean
   ): Promise<SearchResult> =>
-    ipcRenderer.invoke('app/search', filter, value, updateSearchHistory, isPredictiveSearchEnabled),
+    ipcRenderer.invoke('app/search', filter, value, updateSearchHistory),
   clearSearchHistory: (searchText?: string[]): Promise<boolean> =>
     ipcRenderer.invoke('app/clearSearchHistory', searchText)
 };
@@ -447,8 +446,12 @@ const eloDuels = {
 const songGuessr = {
   getRound: (options: SongGuessrRoundOptions): Promise<SongGuessrRound | null> =>
     ipcRenderer.invoke('app/getSongGuessrRound', options),
-  searchCandidates: (query: string, limit?: number): Promise<SongGuessrCandidate[]> =>
-    ipcRenderer.invoke('app/searchSongGuessrCandidates', query, limit),
+  searchCandidates: (
+    query: string,
+    limit?: number,
+    offset?: number
+  ): Promise<SongGuessrSearchResult> =>
+    ipcRenderer.invoke('app/searchSongGuessrCandidates', query, limit, offset),
   getPools: (): Promise<SongGuessrPoolOption[]> => ipcRenderer.invoke('app/getSongGuessrPools')
 };
 

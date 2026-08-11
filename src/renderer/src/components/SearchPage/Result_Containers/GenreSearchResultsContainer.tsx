@@ -12,7 +12,6 @@ type Props = {
   genres: Genre[];
   searchInput: string;
   noOfVisibleGenres?: number;
-  isPredictiveSearchEnabled: boolean;
 };
 
 const GenreSearchResultsContainer = (props: Props) => {
@@ -24,7 +23,7 @@ const GenreSearchResultsContainer = (props: Props) => {
   const { toggleMultipleSelections, changeCurrentActivePage } = useContext(AppUpdateContext);
   const { t } = useTranslation();
 
-  const { genres, searchInput, noOfVisibleGenres = 3, isPredictiveSearchEnabled } = props;
+  const { genres, searchInput, noOfVisibleGenres = 3 } = props;
 
   const selectAllHandler = useSelectAllHandler(genres, 'genre', 'genreId');
 
@@ -113,8 +112,7 @@ const GenreSearchResultsContainer = (props: Props) => {
                   changeCurrentActivePage('AllSearchResults', {
                     searchQuery: searchInput,
                     searchFilter: 'Genres' as SearchFilters,
-                    searchResults: genres,
-                    isPredictiveSearchEnabled
+                    searchResults: genres
                   })
                 }
               />

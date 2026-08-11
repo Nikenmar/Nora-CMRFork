@@ -113,6 +113,16 @@ I can choose the whole library, a playlist, or a genre as the pool. Pools need a
 
 It is a local game over my own files - no daily puzzle, no server, and nothing leaves the machine.
 
+## Search
+
+Search is one thing now, and it finds tracks. Type a title, an artist, or both in whichever order they come to mind - "halo beyonce" and "beyonce halo" both land on the same song. Mistype it and it still works: a wrong letter, a missing one, or two letters swapped ("niravna") are all forgiven. Everything is ranked in a single pass, so an exact hit sits above a title that merely starts with your words, which sits above the ones where all your words appear somewhere. Among equally good matches, the tracks you actually play come first.
+
+The part I built it for is text nobody can type as written. Names full of stylised glyphs get folded back to letters: "hiraeth" finds `hiræth`, "oneheart" finds `Øneheart`, "aster" finds `ΔS†ΞЯ`, and "little dark age" finds it even when the tags spell it `𝓛𝓲𝓽𝓽𝓵𝓮 𝓓𝓪𝓻𝓴 𝓐𝓰𝓮`. Anything in another script is also searchable by how it sounds - "hikari" finds `ひかり`, "ellada" finds `Ελλάδα`, "tupaya diana" finds `тупая диана` - across every script Unicode knows, with kana, hangul and pinyin handled by dedicated readers. A digit standing in for a word is spelled out both ways, so "1heart" finds `Øneheart`. And if you started typing before switching layouts, "negfz Lbfyf" still finds `тупая диана`.
+
+None of that turns the results into a pile, because none of it is free. Every one of those readings costs the match a little rank, so a plain hit always wins. Guesswork is a fallback rather than an addition: if anything matched cleanly, the typo and letters-in-order results are dropped entirely instead of padding the list. Digits are never read as letters, so `1979` and `24K Magic` stay numbers. Short words get no typo budget at all, because one edit away from "car" is "cat", a different word rather than a mistake.
+
+What this replaced: a **predictive search** toggle, and behind it an edit distance measured across whole titles - which is how "aster" came back with `wasted` and `aether`. Worse, the three strategies in there were mutually exclusive: predictive answered first, and if it found anything at all the better matching never ran. So the toggle really chose between two bad searches. It is gone, along with its setting, and the same engine now powers the SongGuessr guess box.
+
 ## Sticky selection
 
 Multi-select no longer evaporates when you switch tabs or finish an action. Select songs, wander around the app, then do the thing. It clears with **Esc**, the **Unselect** button in the top bar, or actions that actually remove the selected items - and it never mixes songs with playlists.

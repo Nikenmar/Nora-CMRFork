@@ -11,12 +11,12 @@ import { useStore } from '@tanstack/react-store';
 type Props = {
   artists: Artist[];
   searchInput: string;
-  isPredictiveSearchEnabled: boolean;
+
   noOfVisibleArtists?: number;
 };
 
 const ArtistsSearchResultsContainer = (props: Props) => {
-  const { artists, searchInput, noOfVisibleArtists = 5, isPredictiveSearchEnabled } = props;
+  const { artists, searchInput, noOfVisibleArtists = 5 } = props;
   const multipleSelectionsData = useStore(store, (state) => state.multipleSelectionsData);
   const isMultipleSelectionEnabled = useStore(
     store,
@@ -118,8 +118,7 @@ const ArtistsSearchResultsContainer = (props: Props) => {
                   changeCurrentActivePage('AllSearchResults', {
                     searchQuery: searchInput,
                     searchFilter: 'Artists' as SearchFilters,
-                    searchResults: artists,
-                    isPredictiveSearchEnabled
+                    searchResults: artists
                   })
                 }
               />
